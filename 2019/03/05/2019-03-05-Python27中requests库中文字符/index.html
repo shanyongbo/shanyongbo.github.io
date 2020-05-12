@@ -10,7 +10,7 @@
   
   <title>
     
-      Hello World | Hexo
+      requests post中文名文件 | Hexo
     
   </title>
   <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -153,8 +153,8 @@
 </header>
 
     <div id="article-banner">
-  <h2>Hello World</h2>
-  <p class="post-date">2020-05-12</p>
+  <h2>requests post中文名文件</h2>
+  <p class="post-date">2019-03-05</p>
   <div class="arrow-down">
     <a href="javascript:;"></a>
   </div>
@@ -162,21 +162,44 @@
 <main class="app-body flex-box">
   <!-- Article START -->
   <article class="post-article">
-    <section class="markdown-content"><p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+    <section class="markdown-content"><p>这两天使用requests库向一些测试接口post文件的时候，服务器报错，查了半天，发现好像是中文字符导致的问题，遂寻找以下解决办法。</p>
+<a id="more"></a>
 
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<h1 id="1、使用urllib总的quote和unquote方法"><a href="#1、使用urllib总的quote和unquote方法" class="headerlink" title="1、使用urllib总的quote和unquote方法"></a>1、使用urllib总的quote和unquote方法</h1><p>发现可以使用urllib库中quote方法将文件名中的特殊字符转为安全字符，然后可以在服务端将文件名再用unquote转回来，代码如下：</p>
+<h2 id="1-1-上传测试使用requests库的代码"><a href="#1-1-上传测试使用requests库的代码" class="headerlink" title="1.1 上传测试使用requests库的代码"></a>1.1 上传测试使用requests库的代码</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> urllib</span><br><span class="line"></span><br><span class="line">url = <span class="string">"127.0.0.1:8080/upload"</span></span><br><span class="line">file_name = <span class="string">"c:\\test\\测试用文档.doc"</span></span><br><span class="line">file = &#123;<span class="string">"file"</span>: (urllib.quote(file_name), open(file_name, <span class="string">"rb"</span>))&#125;</span><br><span class="line">requests.post(url, files=file)</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-</section>
+<h2 id="1-2-服务端代码"><a href="#1-2-服务端代码" class="headerlink" title="1.2 服务端代码"></a>1.2 服务端代码</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ... 省略的其他导入模块</span></span><br><span class="line"><span class="keyword">import</span> urllib</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route("/upload",["POST"])</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">upload</span><span class="params">()</span>:</span></span><br><span class="line">    file = request.files[<span class="string">'file'</span>]</span><br><span class="line">    filename = file.filename</span><br><span class="line">    <span class="comment"># 将文件名转回正常名称</span></span><br><span class="line">    file_name = urllib.unquote(filename.encode(<span class="string">"utf-8"</span>))</span><br><span class="line">    <span class="comment"># ... 其他实现代码</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="2、将file-name-当做参数放入data"><a href="#2、将file-name-当做参数放入data" class="headerlink" title="2、将file_name 当做参数放入data"></a>2、将file_name 当做参数放入data</h1><p>把file_name 当做参数放在data中，之后再到服务端将file_name 取出</p>
+<h2 id="2-1-测试使用requests库的代码"><a href="#2-1-测试使用requests库的代码" class="headerlink" title="2.1 测试使用requests库的代码"></a>2.1 测试使用requests库的代码</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> urllib</span><br><span class="line"></span><br><span class="line">url = <span class="string">"127.0.0.1:8080/upload"</span></span><br><span class="line">file_name = <span class="string">"c:\\test\\测试用文档.doc"</span></span><br><span class="line">file = &#123;<span class="string">"file"</span>: open(file_name, <span class="string">"rb"</span>)&#125;</span><br><span class="line">requests.post(url, data=&#123;<span class="string">"file_name"</span>: file_name&#125;, files=file)</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-服务端代码"><a href="#2-2-服务端代码" class="headerlink" title="2.2 服务端代码"></a>2.2 服务端代码</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ... 省略的其他导入模块</span></span><br><span class="line"><span class="keyword">import</span> urllib</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route("/upload",["POST"])</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">upload</span><span class="params">()</span>:</span></span><br><span class="line">    file = request.files[<span class="string">'file'</span>]</span><br><span class="line">    file_name = request.form.get(<span class="string">"file_name"</span>)</span><br><span class="line">    <span class="comment"># ... 其他实现代码</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="3、修改urllib或flask源码，修改验证方式"><a href="#3、修改urllib或flask源码，修改验证方式" class="headerlink" title="3、修改urllib或flask源码，修改验证方式"></a>3、修改urllib或flask源码，修改验证方式</h1></section>
     <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#requests" >
+    <span class="tag-code">requests</span>
+  </a>
+
+  <a href="/tags#post" >
+    <span class="tag-code">post</span>
+  </a>
+
+  <a href="/tags#urllib" >
+    <span class="tag-code">urllib</span>
+  </a>
+
+      </div>
     
     <!-- Tags END -->
     <!-- NAV START -->
@@ -184,13 +207,13 @@
   <div class="nav-container">
     <!-- reverse left and right to put prev and next in a more logic postition -->
     
-      <a class="nav-left" href="/2019/05/27/2019-05-27-rollover%20api/">
-        <span class="nav-arrow">← </span>
+    
+      <a class="nav-right" href="/2019/05/27/2019-05-27-rollover%20api/">
         
           es滚动索引 —— Rollover api
         
+        <span class="nav-arrow"> →</span>
       </a>
-    
     
   </div>
 
@@ -236,7 +259,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Quick-Start"><span class="toc-nav-text">Quick Start</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Create-a-new-post"><span class="toc-nav-text">Create a new post</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Run-server"><span class="toc-nav-text">Run server</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Generate-static-files"><span class="toc-nav-text">Generate static files</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Deploy-to-remote-sites"><span class="toc-nav-text">Deploy to remote sites</span></a></li></ol></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#1、使用urllib总的quote和unquote方法"><span class="toc-nav-text">1、使用urllib总的quote和unquote方法</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#1-1-上传测试使用requests库的代码"><span class="toc-nav-text">1.1 上传测试使用requests库的代码</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#1-2-服务端代码"><span class="toc-nav-text">1.2 服务端代码</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#2、将file-name-当做参数放入data"><span class="toc-nav-text">2、将file_name 当做参数放入data</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#2-1-测试使用requests库的代码"><span class="toc-nav-text">2.1 测试使用requests库的代码</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#2-2-服务端代码"><span class="toc-nav-text">2.2 服务端代码</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#3、修改urllib或flask源码，修改验证方式"><span class="toc-nav-text">3、修改urllib或flask源码，修改验证方式</span></a></li></ol>
     
   </div>
 </aside>
@@ -246,7 +269,7 @@
 
 <script>
   (function () {
-    var url = 'http://yoursite.com/2020/05/12/hello-world/';
+    var url = 'http://yoursite.com/2019/03/05/2019-03-05-Python27中requests库中文字符/';
     var banner = ''
     if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
       $('#article-banner').css({
@@ -308,7 +331,7 @@
     var gitmentConfig = "yanm1ng";
     if (gitmentConfig !== 'undefined') {
       var gitment = new Gitment({
-        id: "Hello World",
+        id: "requests post中文名文件",
         owner: "yanm1ng",
         repo: "yanm1ng.github.io",
         oauth: {
