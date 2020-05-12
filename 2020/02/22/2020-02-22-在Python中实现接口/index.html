@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="yanm1ng&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      在Python中实现接口 | Hexo
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>Hexo</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>在Python中实现接口</h2>
+  <p class="post-date">2020-02-22</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><p>原文：<a href="https://realpython.com/python-interface/" target="_blank" rel="noopener">Implementing an Interface in Python</a></p>
+<p>在软件工程中，接口扮演者一个重要的角色。随着应用的发展，代码库升级和更改变得越来越难以管理。通常，你会遇到一些看上去很相似但却不相关的类，这可能会导致一些困惑。在这篇文档中，你会看到如何使用<strong>Python的接口</strong>去决定对于解决当前问题什么样的类是你需要的。</p>
+<p><strong>在这篇文章中，你能够</strong>：</p>
+<ul>
+<li><strong>懂得</strong>接口是如何工作的以及Python接口创建的注意事项</li>
+<li><strong>理解</strong>在像Python这样的动态语言中接口的有用性</li>
+<li><strong>实现</strong>一个非正式的Python接口</li>
+<li><strong>使用</strong> <code>abc.ABCMeta</code> 和 <code>@abc.abstractmethod</code> 去实现一个正式的Python接口</li>
+</ul>
+<p>Python中的接口与大多数其他语言的处理方式不同，并且它们的设计复杂度可能会有所不同。在本篇文档结束时，你将会更好地理解Python数据模型的某些方面，以及Python中的接口与Java，C ++和Go等语言的接口相比有什么不同。</p>
+<a id="more"></a>
+
+
+
+<h2 id="Python-Interface-Overview"><a href="#Python-Interface-Overview" class="headerlink" title="Python Interface Overview"></a>Python Interface Overview</h2><p>在较高的层次上，接口充当设计类的<strong>蓝图</strong>。像类一样，接口定义方法。与类不同的是，这些方法是抽象的。<strong>抽象方法</strong>是接口简单定义的一种方法。它不会实现这些方法。这是由类完成的，然后类<strong>实现</strong>接口并为接口的抽象方法赋予具体含义。</p>
+<p>与Java，Go和C ++等语言相比，Python的接口设计方法是有所不同的。这些语言都有一个 <code>interface</code> 关键字，而Python却没有。 Python在另一个方面更进一步的偏离了其他语言。不需要实现接口的类来定义接口的所有抽象方法。</p>
+<h2 id="Informal-Interfaces"><a href="#Informal-Interfaces" class="headerlink" title="Informal Interfaces"></a>Informal Interfaces</h2><p>在某些情况下，你可能不需要正式的Python接口的严格规则。 Python的动态特性使你可以实现<strong>非正式接口</strong>。非正式的Python接口是一个类，它定义了可以覆盖的方法，但没有严格的强制要求。</p>
+<p>在下面的示例中，以数据工程师的角度，你需要从各种不同的非结构化的文件类型中提取文本（例如PDF和电子邮件）。你将会创建一个非正式的接口，该接口定义将在<code>PdfParser</code>和<code>EmlParser</code>具体类中使用的方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">InformalParserInterface</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Load in the file for extracting text."""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_name: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""Extract text from the currently loaded file."""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p><code>InformalParserInterface</code> 定义了两个方法 <code>.load_data_source()</code> 和 <code>.extract_text()</code>。这些方法已定义但是并未实现。一旦创建从 <code>InformalParserInterface</code> 类继承的<strong>具体类</strong>，那么该实现就有了相关的方法。</p>
+<p>如你所见，<code>InformalParserInterface</code> 看起来与标准Python类相同。依靠 <a href="https://realpython.com/lessons/duck-typing/" target="_blank" rel="noopener">duck typing</a>， 你可以告诉用户这是一个接口，应该相应地使用它。</p>
+<p><strong>注意：</strong>没听说过<strong>duck typing</strong>吗？这个术语的意思是，如果你有一个看起来像鸭子的物体，像鸭子一样走路，像鸭子一样嘎嘎叫，那么它一定是鸭子！如果需要了解更多的相关信息，可以看看这篇文章：<a href="https://realpython.com/lessons/duck-typing/" target="_blank" rel="noopener">Duck Typing</a>。</p>
+<p>牢记鸭子类型，现在，你已经定义了两个实现 <code>InformalParserInterface</code> 的类了。要使用你的接口，你必须创建一个具体的类。 <strong>具体类</strong>是接口类的子类，提供接口方法的具体实现。创建两个具体的类来实现你的接口。第一个是<code>PdfParser</code>，用来来解析PDF文件中的文本：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PdfParser</span><span class="params">(InformalParserInterface)</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from a PDF"""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides InformalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""Overrides InformalParserInterface.extract_text()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>现在<code>InformalParserInterface</code> 的具体实现允许你从PDF文件中提取文本。</p>
+<p>第二个具体的类是<code>EmlParser</code>，用来解析电子邮件中的文本：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmlParser</span><span class="params">(InformalParserInterface)</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from an email"""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides InformalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text_from_email</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""A method defined only in EmlParser.</span></span><br><span class="line"><span class="string">        Does not override InformalParserInterface.extract_text()</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>现在，<code>InformalParserInterface</code> 的具体实现允许你可以从电子邮件文件中提取文本了。</p>
+<p>到目前为止，你已经定义了<code>InformalPythonInterface</code>的两个<strong>具体实现</strong>。但是请注意，<code>EmlParser</code> 没有适当的定义 <code>.extract_text()</code>。如果你要检查<code>EmlParser</code>是否实现了<code>InformalParserInterface</code>，那么会得到下面的结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="comment"># Check if both PdfParser and EmlParser implement InformalParserInterface</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>issubclass(PdfParser, InformalParserInterface)</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>issubclass(EmlParser, InformalParserInterface)</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>这会返回 <code>True</code>，由于违反了接口的定义，因此带来了一个问题！</p>
+<p>现在检查 <code>PdfParser</code> 和 <code>EmlParser</code> 的 <strong>方法解析顺序（MRO）</strong>。这将告诉你所涉及类的超类，以及搜索它们从而执行方法的顺序。你可以使用<del>特殊方法</del><code>cls.__mro__</code>查看类的MRO：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>PdfParser.__mro__</span><br><span class="line">(__main__.PdfParser, __main__.InformalParserInterface, object)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>EmlParser.__mro__</span><br><span class="line">(__main__.EmlParser, __main__.InformalParserInterface, object)</span><br></pre></td></tr></table></figure>
+
+<p>这样的非正式接口适用于小型项目，在小型项目中，只有少数开发人员会在源代码上工作。但是，随着项目规模的扩大和团队的成长，这可能导致开发人员花费大量时间在代码库中寻找难以发现的逻辑错误！</p>
+<h3 id="Using-Metaclasses"><a href="#Using-Metaclasses" class="headerlink" title="Using Metaclasses"></a>Using Metaclasses</h3><p>理想情况下，当实现类未定义接口类的所有抽象方法时，你希望<code>issubclass(EmlParser，InformalParserInterface</code>)返回<code>False</code>。为此，你可以创建一个 <a href="https://realpython.com/python-metaclasses/" target="_blank" rel="noopener">metaclass</a> 称为 <code>ParserMeta</code>，覆盖两个<a href="https://dbader.org/blog/python-特殊-methods" target="_blank" rel="noopener">特殊</a>方法：</p>
+<ol>
+<li><code>.__instancecheck__()</code></li>
+<li><code>.__subclasscheck__()</code></li>
+</ol>
+<p>在下面的代码块中，你将创建一个名为<code>UpdatedInformalParserInterface</code>的类，该类是基于<code>ParserMeta</code>元类构建的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ParserMeta</span><span class="params">(type)</span>:</span></span><br><span class="line">    <span class="string">"""A Parser metaclass that will be used for parser class creation.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__instancecheck__</span><span class="params">(cls, instance)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> cls.__subclasscheck__(type(instance))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__subclasscheck__</span><span class="params">(cls, subclass)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (hasattr(subclass, <span class="string">'load_data_source'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.load_data_source) <span class="keyword">and</span> </span><br><span class="line">                hasattr(subclass, <span class="string">'extract_text'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.extract_text))</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UpdatedInformalParserInterface</span><span class="params">(metaclass=ParserMeta)</span>:</span></span><br><span class="line">    <span class="string">"""This interface is used for concrete classes to inherit from.</span></span><br><span class="line"><span class="string">    There is no need to define the ParserMeta methods as any class</span></span><br><span class="line"><span class="string">    as they are implicitly made available via .__subclasscheck__().</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>现在，既然已经创建了<code>ParserMeta</code>和<code>UpdatedInformalParserInterface</code>，就可以创建具体的实现了。</p>
+<p>首先，创建一个用于解析PDF的新类，称为<code>PdfParserNew</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PdfParserNew</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from a PDF."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides UpdatedInformalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""Overrides UpdatedInformalParserInterface.extract_text()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>在这里，<code>PdfParserNew</code>会覆盖<code>.load_data_source()</code>和 <code>.extract_text()</code>，因此<code>issubclass(PdfParserNew，UpdatedInformalParserInterface)</code>应该返回<code>True</code>。</p>
+<p>在下一个代码块中，你将使用名为<code>EmlParserNew</code>的电子邮件解析器的新实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmlParserNew</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from an email."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides UpdatedInformalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text_from_email</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""A method defined only in EmlParser.</span></span><br><span class="line"><span class="string">        Does not override UpdatedInformalParserInterface.extract_text()</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>这里，你有一个用于创建<code>UpdatedInformalParserInterface</code>的元类。通过使用元类，你无需显式定义子类。相反，子类必须<strong>定义所需的方法</strong>。如果没有，则<code>issubclass(EmlParserNew，UpdatedInformalParserInterface)</code>将返回<code>False</code>。</p>
+<p>在具体类上运行<code>issubclass()</code>会产生以下结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>issubclass(PdfParserNew, UpdatedInformalParserInterface)</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>issubclass(EmlParserNew, UpdatedInformalParserInterface)</span><br><span class="line"><span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<p>不出所料，由于<code>EmlParserNew</code>中未定义<code>.extract_text()</code>，因此<code>EmlParserNew</code>不是<code>UpdatedInformalParserInterface</code>的子类。</p>
+<p>现在，让我们看一下MRO：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>PdfParserNew.__mro__</span><br><span class="line">(&lt;class '__main__.PdfParserNew'&gt;, &lt;class 'object'&gt;)</span><br></pre></td></tr></table></figure>
+
+<p>如你所见，<code>UpdatedInformalParserInterface</code>是<code>PdfParserNew</code>的超类，但并未在MRO中显示。这种不正常的行为是由以下事实引起的：<code>UpdatedInformalParserInterface</code>是<code>PdfParserNew</code>的<strong>虚拟基类</strong>。</p>
+<h3 id="Using-Virtual-Base-Classes"><a href="#Using-Virtual-Base-Classes" class="headerlink" title="Using Virtual Base Classes"></a>Using Virtual Base Classes</h3><p>在前面的示例中，即使<code>UpdatedInformalParserInterface</code>没有出现在<code>EmlParserNew</code> MRO中，<code>issubclass(EmlParserNew，UpdatedInformalParserInterface)</code>也返回了<code>True</code>。这是因为<code>UpdatedInformalParserInterface</code>是<code>EmlParserNew</code>的<strong>虚拟基类</strong>。</p>
+<p>这些和标准子类之间的主要区别在于，虚拟基类使用<code>.__subclasscheck__()</code> 特殊方法隐式检查类是否为超类的虚拟子类。此外，虚拟基类不会出现在子类MRO中。</p>
+<p>看一下以下代码块：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PersonMeta</span><span class="params">(type)</span>:</span></span><br><span class="line">    <span class="string">"""A person metaclass"""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__instancecheck__</span><span class="params">(cls, instance)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> cls.__subclasscheck__(type(instance))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__subclasscheck__</span><span class="params">(cls, subclass)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (hasattr(subclass, <span class="string">'name'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.name) <span class="keyword">and</span> </span><br><span class="line">                hasattr(subclass, <span class="string">'age'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.age))</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PersonSuper</span>:</span></span><br><span class="line">    <span class="string">"""A person superclass"""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">name</span><span class="params">(self)</span> -&gt; str:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">age</span><span class="params">(self)</span> -&gt; int:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Person</span><span class="params">(metaclass=PersonMeta)</span>:</span></span><br><span class="line">    <span class="string">"""Person interface built from PersonMeta metaclass."""</span></span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>下面是创建虚拟基类的步骤：</p>
+<ol>
+<li>元类<code>PersonMeta</code></li>
+<li>基类<code>PersonSuper</code></li>
+<li>Python接口<code>Person</code></li>
+</ol>
+<p>现在已经完成了创建<strong>虚拟基类</strong>的步骤，定义两个具体的类，即<code>Employee</code>和<code>Friend</code>。 <code>Employee</code>类继承自<code>PersonSuper</code>，而<code>Friend</code>隐式继承自<code>Person</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Inheriting subclasses</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Employee</span><span class="params">(PersonSuper)</span>:</span></span><br><span class="line">    <span class="string">"""Inherits from PersonSuper</span></span><br><span class="line"><span class="string">    PersonSuper will appear in Employee.__mro__</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Friend</span>:</span></span><br><span class="line">    <span class="string">"""Built implicitly from Person</span></span><br><span class="line"><span class="string">    Friend is a virtual subclass of Person since</span></span><br><span class="line"><span class="string">    both required methods exist.</span></span><br><span class="line"><span class="string">    Person not in Friend.__mro__</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">name</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">age</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>尽管<code>Friend</code>没有显式继承自<code>Person</code>，但它实现了 <code>.name()</code> 和 <code>.age()</code>，因此<code>Person</code>成为<code>Friend</code>的<strong>虚拟基类</strong>。当运行<code>issubclass(Friend, Person)</code>时，它应该返回<code>True</code>，这意味着<code>Friend</code>是<code>Person</code>的子类。</p>
+<p>下面的<a href="https://realpython.com/inheritance-composition-python/#whats-inheritance" target="_blank" rel="noopener"><strong>UML</strong></a>图显示了当你在<code>Friend</code>类上调用<code>issubclass()</code>时会发生什么：</p>
+<p><a href="https://files.realpython.com/media/virtual-base-class.b545144aafef.png" target="_blank" rel="noopener"><img src="https://files.realpython.com/media/virtual-base-class.b545144aafef.png" alt="virtual base class"></a></p>
+<p>看一下 <code>PersonMeta</code>，你会注意到还有另一种特殊方法，称为 <code>.__instancecheck__()</code>。该方法用于检查是否从<code>Person</code>接口创建了<code>Friend</code>的实例。当你使用<code>isinstance(Friend, Person)</code>时，你的代码将调用<code>.__instancecheck__()</code>。</p>
+<h2 id="Formal-Interfaces"><a href="#Formal-Interfaces" class="headerlink" title="Formal Interfaces"></a>Formal Interfaces</h2><p>非正式接口对于代码量少且程序员数量有限的项目很有用。但是对于大型应用程序，使用非正式接口是错误的方法。为了创建<strong>正式的Python接口</strong>，你将需要Python的<code>abc</code>模块中的一些其他工具。</p>
+<h3 id="Using-abc-ABCMeta"><a href="#Using-abc-ABCMeta" class="headerlink" title="Using abc.ABCMeta"></a>Using <code>abc.ABCMeta</code></h3><p>为了实施抽象方法的子类实例化，你将使用Python内置模块<a href="https://docs.python.org/3/library/abc.html" target="_blank" rel="noopener"><code>abc</code></a>中的<code>ABCMeta</code>。回到<code>UpdatedInformalParserInterface</code>接口，你使用覆盖的特殊方法<code>.__instancecheck__()</code>和<code>.__subclasscheck__()</code>创建了自己的元类<code>ParserMeta</code>。</p>
+<p>与其创建自己的元类，不如使用<code>abc.ABCMeta</code>作为元类。然后，使用<code>.__subclasshook__()</code>方法重写<code>.__instancecheck__()</code>和<code>.__subclasscheck__()</code>方法，因为它创建了特殊方法更可靠的实现。</p>
+<h3 id="Using-subclasshook"><a href="#Using-subclasshook" class="headerlink" title="Using .__subclasshook__()"></a>Using <code>.__subclasshook__()</code></h3><p>这是使用<code>abc.ABCMeta</code>作为元类的<code>FormalParserInterface</code>的实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> abc</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FormalParserInterface</span><span class="params">(metaclass=abc.ABCMeta)</span>:</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__subclasshook__</span><span class="params">(cls, subclass)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (hasattr(subclass, <span class="string">'load_data_source'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.load_data_source) <span class="keyword">and</span> </span><br><span class="line">                hasattr(subclass, <span class="string">'extract_text'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.extract_text))</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PdfParserNew</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from a PDF."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.extract_text()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmlParserNew</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from an email."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text_from_email</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""A method defined only in EmlParser.</span></span><br><span class="line"><span class="string">        Does not override FormalParserInterface.extract_text()</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>如果在<code>PdfParserNew</code>和<code>EmlParserNew</code>上运行<code>issubclass()</code>，则<code>issubclass()</code>将分别返回<code>True</code>和<code>False</code>。</p>
+<h3 id="Using-abc-to-Register-a-Virtual-Subclass"><a href="#Using-abc-to-Register-a-Virtual-Subclass" class="headerlink" title="Using abc to Register a Virtual Subclass"></a>Using <code>abc</code> to Register a Virtual Subclass</h3><p>一旦你导入<code>abc</code>模块后，你可以使用<code>.register()</code>元方法直接<strong>注册虚拟子类</strong>。在下一个示例中，将接口<code>Double</code>注册为内置<code>__float__</code>类的虚拟子类：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Double</span><span class="params">(metaclass=abc.ABCMeta)</span>:</span></span><br><span class="line">    <span class="string">"""Double precision floating point number."""</span></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">Double.register(float)</span><br></pre></td></tr></table></figure>
+
+<p>你可以查看使用<code>.register()</code>的效果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>issubclass(float, Double)</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>isinstance(<span class="number">1.2345</span>, Double)</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>通过使用<code>.register()</code>元方法，你已成功将<code>Double</code>登记为<code>float</code>的虚拟子类。</p>
+<p>一旦注册了<code>Double</code>，你就可以将其用作类<a href="https://realpython.com/courses/python-decorators-101/" target="_blank" rel="noopener">decorator</a>，将装饰后的类设置为虚拟子类：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Double.register</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Double64</span>:</span></span><br><span class="line">    <span class="string">"""A 64-bit double-precision floating-point number."""</span></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">print(issubclass(Double64, Double))  <span class="comment"># True</span></span><br></pre></td></tr></table></figure>
+
+<p>装饰器注册方法可帮助你创建自定义虚拟类继承的层次结构。</p>
+<h3 id="Using-Subclass-Detection-With-Registration"><a href="#Using-Subclass-Detection-With-Registration" class="headerlink" title="Using Subclass Detection With Registration"></a>Using Subclass Detection With Registration</h3><p>将<code>.__subclasshook__()</code>与<code>.register()</code>结合使用时必须小心，因为<code>.__subclasshook__()</code>优先于虚拟子类注册。为了确保考虑已注册的虚拟子类，必须在<code>.__subclasshook__()</code>特殊方法中添加<code>NotImplemented</code>。 <code>FormalParserInterface</code>将更新为以下内容：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FormalParserInterface</span><span class="params">(metaclass=abc.ABCMeta)</span>:</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__subclasshook__</span><span class="params">(cls, subclass)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (hasattr(subclass, <span class="string">'load_data_source'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.load_data_source) <span class="keyword">and</span> </span><br><span class="line">                hasattr(subclass, <span class="string">'extract_text'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.extract_text) <span class="keyword">or</span> </span><br><span class="line">                <span class="built_in">NotImplemented</span>)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PdfParserNew</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from a PDF."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.extract_text()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@FormalParserInterface.register</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmlParserNew</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from an email."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text_from_email</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""A method defined only in EmlParser.</span></span><br><span class="line"><span class="string">        Does not override FormalParserInterface.extract_text()</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">print(issubclass(PdfParserNew, FormalParserInterface))  <span class="comment"># True</span></span><br><span class="line">print(issubclass(EmlParserNew, FormalParserInterface))  <span class="comment"># True</span></span><br></pre></td></tr></table></figure>
+
+<p>由于你已使用了注册，因此可以看到<code>EmlParserNew</code>被视为你<code>FormalParserInterface</code>接口的虚拟子类。<br>这不是你想要的，因为<code>EmlParserNew</code>不会覆盖<code>.extract_text()</code>。 <strong>请谨慎使用虚拟子类注册！</strong></p>
+<h3 id="Using-Abstract-Method-Declaration"><a href="#Using-Abstract-Method-Declaration" class="headerlink" title="Using Abstract Method Declaration"></a>Using Abstract Method Declaration</h3><p><strong>抽象方法</strong>是Python接口声明的方法，但可能没有有用的实现。抽象方法必须由实现所讨论接口的具体类覆盖。</p>
+<p>要在Python中创建抽象方法，你可以在接口的方法中添加<code>@abc.abstractmethod</code>装饰器。在下一个示例中，你将更新<code>FormalParserInterface</code>，使其包含抽象方法<code>.load_data_source()</code>和<code>.extract_text()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FormalParserInterface</span><span class="params">(metaclass=abc.ABCMeta)</span>:</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__subclasshook__</span><span class="params">(cls, subclass)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (hasattr(subclass, <span class="string">'load_data_source'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.load_data_source) <span class="keyword">and</span> </span><br><span class="line">                hasattr(subclass, <span class="string">'extract_text'</span>) <span class="keyword">and</span> </span><br><span class="line">                callable(subclass.extract_text) <span class="keyword">or</span> </span><br><span class="line">                <span class="built_in">NotImplemented</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @abc.abstractmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span>:</span></span><br><span class="line">        <span class="string">"""Load in the data set"""</span></span><br><span class="line">        <span class="keyword">raise</span> NotImplementedError</span><br><span class="line"></span><br><span class="line"><span class="meta">    @abc.abstractmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_path: str)</span>:</span></span><br><span class="line">        <span class="string">"""Extract text from the data set"""</span></span><br><span class="line">        <span class="keyword">raise</span> NotImplementedError</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PdfParserNew</span><span class="params">(FormalParserInterface)</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from a PDF."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.extract_text()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmlParserNew</span><span class="params">(FormalParserInterface)</span>:</span></span><br><span class="line">    <span class="string">"""Extract text from an email."""</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load_data_source</span><span class="params">(self, path: str, file_name: str)</span> -&gt; str:</span></span><br><span class="line">        <span class="string">"""Overrides FormalParserInterface.load_data_source()"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">extract_text_from_email</span><span class="params">(self, full_file_path: str)</span> -&gt; dict:</span></span><br><span class="line">        <span class="string">"""A method defined only in EmlParser.</span></span><br><span class="line"><span class="string">        Does not override FormalParserInterface.extract_text()</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<p>在上面的示例中，你最终创建了一个正式接口，当不重写抽象方法时，该接口将引发错误。 <code>PdfParserNew</code>实例<code>pdf_parser</code>不会引发任何错误，因为<code>PdfParserNew</code>正确覆盖了<code>FormalParserInterface</code>抽象方法。但是，<code>EmlParserNew</code>会引发错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; pdf_parser &#x3D; PdfParserNew()</span><br><span class="line">&gt;&gt;&gt; eml_parser &#x3D; EmlParserNew()</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;real_python_interfaces.py&quot;, line 53, in &lt;module&gt;</span><br><span class="line">    eml_interface &#x3D; EmlParserNew()</span><br><span class="line">TypeError: Can&#39;t instantiate abstract class EmlParserNew with abstract methods extract_text</span><br></pre></td></tr></table></figure>
+
+<p>如你所见，<a href="https://realpython.com/python-traceback/" target="_blank" rel="noopener">traceback</a>消息告诉你尚未覆盖所有抽象方法。这是你在构建正式的Python接口时所希望的行为。</p>
+<h2 id="Interfaces-in-Other-Languages"><a href="#Interfaces-in-Other-Languages" class="headerlink" title="Interfaces in Other Languages"></a>Interfaces in Other Languages</h2><p>接口在许多编程语言中出现，并且它们的实现因语言而异。在接下来的文档中，你将会比较Python，Java，C++和Go的接口异同。</p>
+<h3 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h3><p>与Python不同，<a href="https://realpython.com/oop-in-python-vs-java/" target="_blank" rel="noopener">Java</a>包含一个<code>interface</code>关键字。与文件解析器示例相同，你可以使用Java声明一个接口，如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">FileParserInterface</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Static fields, and abstract methods go here ...</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">extractText</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在，你将创建两个具体的类，即<code>PdfParser</code>和<code>EmlParser</code>，以实现<code>FileParserInterface</code>。为此，你必须在类定义中使用关键字<code>implements</code>，如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EmlParser</span> <span class="keyword">implements</span> <span class="title">FileParserInterface</span> </span>&#123;</span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// Code to load the data set</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">extractText</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// Code to extract the text</span></span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续你的文件解析示例，一个功能齐全的Java接口如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FileParser</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="comment">// The main entry point</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">FileParserInterface</span> </span>&#123;</span><br><span class="line">        HashMap&lt;String, ArrayList&lt;String&gt;&gt; file_contents = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">()</span></span>;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">extractText</span><span class="params">()</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PdfParser</span> <span class="keyword">implements</span> <span class="title">FileParserInterface</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// Code to load the data set</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">extractText</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// Code to extract the text</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EmlParser</span> <span class="keyword">implements</span> <span class="title">FileParserInterface</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// Code to load the data set</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">extractText</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="comment">// Code to extract the text</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如你所见，Python接口在创建过程中为你提供了比Java接口更大的灵活性。</p>
+<h3 id="C"><a href="#C" class="headerlink" title="C++"></a>C++</h3><p>像Python一样，C++使用抽象基类来创建接口。在C++中定义接口时，使用关键字<code>virtual</code>来描述应在具体类中覆盖的方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FileParserInterface</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">string</span> path, <span class="built_in">std</span>::<span class="built_in">string</span> file_name)</span></span>;</span><br><span class="line">        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">extractText</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">string</span> full_file_name)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>当你要实现该接口时，将给出具体的类名称，后跟冒号（<code>:</code>），然后是接口名称。以下示例演示了C++接口的实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PdfParser</span> :</span> FileParserInterface &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">string</span> path, <span class="built_in">std</span>::<span class="built_in">string</span> file_name)</span></span>;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">extractText</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">string</span> full_file_name)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmlParser</span> :</span> FileParserInterface &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">loadDataSource</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">string</span> path, <span class="built_in">std</span>::<span class="built_in">string</span> file_name)</span></span>;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">extractText</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">string</span> full_file_name)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Python接口和C++接口具有一些相似之处，因为它们都利用抽象基类来模拟接口。</p>
+<h3 id="Go"><a href="#Go" class="headerlink" title="Go"></a>Go</h3><p>尽管Go的语法让人想起Python，但是Go编程语言包含一个<code>interface</code>关键字，更像Java。让我们在Go中创建<code>fileParserInterface</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> fileParserInterface <span class="keyword">interface</span> &#123;</span><br><span class="line">        loadDataSet(path <span class="keyword">string</span>, filename <span class="keyword">string</span>)</span><br><span class="line">        extractText(full_file_path <span class="keyword">string</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>A big difference between Python and Go is that Go doesn’t have classes. Rather, Go is similar to <a href="https://realpython.com/build-python-c-extension-module/" target="_blank" rel="noopener">C</a> in that it uses the <code>struct</code> keyword to create structures. A <strong>structure</strong> is similar to a class in that a structure contains data and methods. However, unlike a class, all of the data and methods are publicly accessed. The concrete structs in Go will be used to implement the <code>fileParserInterface</code>.</p>
+<p>Here’s an example of how Go uses interfaces:</p>
+<p>Python和Go之间的最大区别是Go没有类。相反，Go与<a href="https://realpython.com/build-python-c-extension-module/" target="_blank" rel="noopener">C</a>相似，因为它使用了<code>struct</code>关键字来创建结构体。 <strong>结构体</strong>与类类似，因为结构包含数据和方法。但是，与类不同是，所有数据和方法都是可以公开访问的。 Go中的具体结构体将用于实现<code>fileParserInterface</code>。</p>
+<p>这是Go如何使用接口的示例：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> fileParserInterface <span class="keyword">interface</span> &#123;</span><br><span class="line">        loadDataSet(path <span class="keyword">string</span>, filename <span class="keyword">string</span>)</span><br><span class="line">        extractText(full_file_path <span class="keyword">string</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> pdfParser <span class="keyword">struct</span> &#123;</span><br><span class="line">        <span class="comment">// Data goes here ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> emlParser <span class="keyword">struct</span> &#123;</span><br><span class="line">        <span class="comment">// Data goes here ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p pdfParser)</span> <span class="title">loadDataSet</span><span class="params">()</span></span> &#123;</span><br><span class="line">        <span class="comment">// Method definition ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p pdfParser)</span> <span class="title">extractText</span><span class="params">()</span></span> &#123;</span><br><span class="line">        <span class="comment">// Method definition ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e emlParser)</span> <span class="title">loadDataSet</span><span class="params">()</span></span> &#123;</span><br><span class="line">        <span class="comment">// Method definition ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e emlParser)</span> <span class="title">extractText</span><span class="params">()</span></span> &#123;</span><br><span class="line">        <span class="comment">// Method definition ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">        <span class="comment">// Main entrypoint</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>与Python接口不同，Go接口是使用结构和显式关键字<code>interface</code>创建的。</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>创建接口时，Python提供了极大的灵活性。非正式的Python接口对于小型项目很有用，因为你不太可能对方法的返回类型感到困惑。随着项目的发展，对<strong>正式Python接口</strong>的需求变得越来越重要，因为推断返回类型变得更加困难。这确保了实现接口的具体类覆盖了抽象方法。</p>
+<p><strong>现在你可以：</strong></p>
+<ul>
+<li><p>了解<strong>接口的工作方式</strong>以及创建Python接口的注意事项</p>
+</li>
+<li><p>了解动态语言（例如Python）的接口的<strong>有用性</strong></p>
+</li>
+<li><p>在Python中实现<strong>正式和非正式</strong>接口</p>
+</li>
+<li><p><strong>比较Python接口</strong>与Java，C++和Go等语言的接口</p>
+</li>
+</ul>
+<p>既然你已经熟悉如何创建Python接口，请将Python接口添加到你的下一个项目中，以查看其实际作用！</p>
+</section>
+    <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#python" >
+    <span class="tag-code">python</span>
+  </a>
+
+  <a href="/tags#接口" >
+    <span class="tag-code">接口</span>
+  </a>
+
+      </div>
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/02/21/2020-02-21-%E5%9C%A8python%E4%B8%AD%E9%87%8D%E8%BD%BD%E5%87%BD%E6%95%B0/">
+        <span class="nav-arrow">← </span>
+        
+          python 函数重载
+        
+      </a>
+    
+    
+      <a class="nav-right" href="/2020/05/12/hello-world/">
+        
+          Hello World
+        
+        <span class="nav-arrow"> →</span>
+      </a>
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Python-Interface-Overview"><span class="toc-nav-text">Python Interface Overview</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Informal-Interfaces"><span class="toc-nav-text">Informal Interfaces</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-Metaclasses"><span class="toc-nav-text">Using Metaclasses</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-Virtual-Base-Classes"><span class="toc-nav-text">Using Virtual Base Classes</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Formal-Interfaces"><span class="toc-nav-text">Formal Interfaces</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-abc-ABCMeta"><span class="toc-nav-text">Using abc.ABCMeta</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-subclasshook"><span class="toc-nav-text">Using .__subclasshook__()</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-abc-to-Register-a-Virtual-Subclass"><span class="toc-nav-text">Using abc to Register a Virtual Subclass</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-Subclass-Detection-With-Registration"><span class="toc-nav-text">Using Subclass Detection With Registration</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Using-Abstract-Method-Declaration"><span class="toc-nav-text">Using Abstract Method Declaration</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Interfaces-in-Other-Languages"><span class="toc-nav-text">Interfaces in Other Languages</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Java"><span class="toc-nav-text">Java</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#C"><span class="toc-nav-text">C++</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Go"><span class="toc-nav-text">Go</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Conclusion"><span class="toc-nav-text">Conclusion</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://yoursite.com/2020/02/22/2020-02-22-在Python中实现接口/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "yanm1ng";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "在Python中实现接口",
+        owner: "yanm1ng",
+        repo: "yanm1ng.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>
