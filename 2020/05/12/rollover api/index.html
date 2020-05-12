@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="yanm1ng&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      es滚动索引 —— Rollover api | Hexo
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>Hexo</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>es滚动索引 —— Rollover api</h2>
+  <p class="post-date">2020-05-12</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><p>当索引过大或过于老旧时，可以使用rollover api创建新的索引；<br>这个api接受一个别名和一组条件，别名必须指向一个正在工作的索引，一组条件包括：<code>max_age，max_docs，max_size</code>.</p>
+<a id="more"></a>
+
+
+
+<h1 id="创建索引"><a href="#创建索引" class="headerlink" title="创建索引"></a>创建索引</h1><p>索引的创建方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">PUT &#x2F;logs-000001 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;aliases&quot;: &#123;</span><br><span class="line">    &quot;logs_write&quot;: &#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 在logs-000001中添加超过1000个文档后执行下面的语句</span><br><span class="line"></span><br><span class="line">POST &#x2F;logs_write&#x2F;_rollover </span><br><span class="line">&#123;</span><br><span class="line">  &quot;conditions&quot;: &#123;</span><br><span class="line">    &quot;max_age&quot;:   &quot;7d&quot;,</span><br><span class="line">    &quot;max_docs&quot;:  1000,</span><br><span class="line">    &quot;max_size&quot;:  &quot;5gb&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的请求会返回下面的内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;acknowledged&quot;: true,</span><br><span class="line">  &quot;shards_acknowledged&quot;: true,</span><br><span class="line">  &quot;old_index&quot;: &quot;logs-000001&quot;,</span><br><span class="line">  &quot;new_index&quot;: &quot;logs-000002&quot;,</span><br><span class="line">  &quot;rolled_over&quot;: true, </span><br><span class="line">  &quot;dry_run&quot;: false, </span><br><span class="line">  &quot;conditions&quot;: &#123; </span><br><span class="line">    &quot;[max_age: 7d]&quot;: false,</span><br><span class="line">    &quot;[max_docs: 1000]&quot;: true,</span><br><span class="line">    &quot;[max_size: 5gb]&quot;: false,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="命名新的索引"><a href="#命名新的索引" class="headerlink" title="命名新的索引"></a>命名新的索引</h1><p>如果一个已经存在的索引以数字结尾，那么新的索引将会采取相同的模式，即将数值增加。不管旧的索引如何命名，新的索引仍然会是一个长度为6的数字，不足的在数字前面用0填充。<br>如果旧的索引不匹配这种模式，那么你必须重新为新的索引指定名称：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">POST &#x2F;my_alias&#x2F;_rollover&#x2F;my_new_index_name</span><br><span class="line">&#123;</span><br><span class="line">  &quot;conditions&quot;: &#123;</span><br><span class="line">    &quot;max_age&quot;:   &quot;7d&quot;,</span><br><span class="line">    &quot;max_docs&quot;:  1000,</span><br><span class="line">    &quot;max_size&quot;: &quot;5gb&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="使用日期作为rollover-api"><a href="#使用日期作为rollover-api" class="headerlink" title="使用日期作为rollover api"></a>使用日期作为rollover api</h1><p>使用日期作为索引是非常有用的，如<code>log-2019.2.25-000001</code>, rollover api支持日期格式，并且在日期索引滚动时增加日期和后面的数字。如上面的在<code>max_age=1d</code>时，索引会滚动为<code>log-2019-2-26-000002</code>.<br>。。。</p>
+<h1 id="定义新索引"><a href="#定义新索引" class="headerlink" title="定义新索引"></a>定义新索引</h1><p>新索引的<code>settings，mappings</code>以及<code>aliases</code>都是继承自它匹配到的任何索引模板。此外，你可以像创建索引一样在request body中指定<code>settings，mappings</code>以及<code>aliases</code>.请求中的值能够覆盖任何匹配到的模板中的内容。如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">PUT &#x2F;logs-000001</span><br><span class="line">&#123;</span><br><span class="line">  &quot;aliases&quot;: &#123;</span><br><span class="line">    &quot;logs_write&quot;: &#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">POST &#x2F;logs_write&#x2F;_rollover</span><br><span class="line">&#123;</span><br><span class="line">  &quot;conditions&quot; : &#123;</span><br><span class="line">    &quot;max_age&quot;: &quot;7d&quot;,</span><br><span class="line">    &quot;max_docs&quot;: 1000,</span><br><span class="line">    &quot;max_size&quot;: &quot;5gb&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;settings&quot;: &#123;</span><br><span class="line">    &quot;index.number_of_shards&quot;: 2</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="测试执行"><a href="#测试执行" class="headerlink" title="测试执行"></a>测试执行</h1><p>rollover api 支持<code>dry_run</code>模式，即在不执行rollover的情况下，对请求的数据进行检查：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">PUT &#x2F;logs-000001</span><br><span class="line">&#123;</span><br><span class="line">  &quot;aliases&quot;: &#123;</span><br><span class="line">    &quot;logs_write&quot;: &#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">POST &#x2F;logs_write&#x2F;_rollover?dry_run</span><br><span class="line">&#123;</span><br><span class="line">  &quot;conditions&quot; : &#123;</span><br><span class="line">    &quot;max_age&quot;: &quot;7d&quot;,</span><br><span class="line">    &quot;max_docs&quot;: 1000,</span><br><span class="line">    &quot;max_size&quot;: &quot;5gb&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="写入索引别名"><a href="#写入索引别名" class="headerlink" title="写入索引别名"></a>写入索引别名</h1><p>在滚动操作期间，当<code>is_write_index</code>已显式设置为<code>true</code>的写入索引时，不会交换滚动别名。由于别名指向多个索引无法区分应该滚动哪个索引，因此滚动指向多个索引的别名是无效的。因此，默认索引别名指向正在写入的索引。由于is_write_index的设置，使得可以用一个别名指向多个索引，同时也明确表明滚动所针对的索引，因此不需要从之前的滚动索引中删除别名。这使得可以允许使用一个别名同时作为滚动管理的索引的写别名和读别名来简化事情。</p>
+<p>例：索引别名中的<code>is_write_index</code>此时被设置到了新滚动的索引之上。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">PUT my_logs_index-000001</span><br><span class="line">&#123;</span><br><span class="line">  &quot;aliases&quot;: &#123;</span><br><span class="line">    &quot;logs&quot;: &#123; &quot;is_write_index&quot;: true &#125; </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PUT logs&#x2F;_doc&#x2F;1</span><br><span class="line">&#123;</span><br><span class="line">  &quot;message&quot;: &quot;a dummy log&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">POST logs&#x2F;_refresh</span><br><span class="line"></span><br><span class="line">POST &#x2F;logs&#x2F;_rollover</span><br><span class="line">&#123;</span><br><span class="line">  &quot;conditions&quot;: &#123;</span><br><span class="line">    &quot;max_docs&quot;:   &quot;1&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PUT logs&#x2F;_doc&#x2F;2 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;message&quot;: &quot;a newer log&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>等到索引rollover之后, 两个索引的别名将会有is_write_index的设置，并且分别反映了各自的角色，新创建的索引将会作为写入的索引，老的索引is_write_index将会变为false。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;my_logs_index-000002&quot;: &#123;</span><br><span class="line">    &quot;aliases&quot;: &#123;</span><br><span class="line">      &quot;logs&quot;: &#123; &quot;is_write_index&quot;: true &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;my_logs_index-000001&quot;: &#123;</span><br><span class="line">    &quot;aliases&quot;: &#123;</span><br><span class="line">      &quot;logs&quot;: &#123; &quot;is_write_index&quot; : false &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h1><p>存储日志时我们可以使用时间来滚动索引来减少一些不必要的查询压力，可以自己设置按照一定的时间间隔、文档数量以及索引大小等内容来滚动索引，为了统一所有滚动索引的映射以及分词器等设置，我们可以在建立滚动索引之前先建立一个索引的模板，之后再对索引进行滚动。</p>
+<p>索引模板如下，其中我们可以指定一个统一的别名来对所有的滚动索引进行统一的搜索，指定映射关系以及设置等，例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">PUT _template&#x2F;log_template</span><br><span class="line">&#123;</span><br><span class="line">  &quot;index_patterns&quot;: [&quot;log*&quot;], </span><br><span class="line">  &quot;mappings&quot;: &#123;</span><br><span class="line">    &quot;_doc&quot;:</span><br><span class="line">    &#123;</span><br><span class="line">      &quot;properties&quot;:&#123;</span><br><span class="line">        &quot;name&quot;:&#123;</span><br><span class="line">          &quot;type&quot;:&quot;keyword&quot;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;aliases&quot;:&#123;&quot;logs_search&quot;:&#123;&#125;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后再使用时间建立滚动索引，并且指定另一个别名始终指向正在写入的索引：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PUT &#x2F;logs-2019.02.26-000001 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;aliases&quot;: &#123;</span><br><span class="line">    &quot;logs_write&quot;: &#123;&quot;is_write_index&quot;: true&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在插入一定的数据之后，定时滚动索引，之后会在一定的条件使索引进行滚动，并且其中一个写入的别名指向滚动后的索引，例，下面的条件表示触发下面任何一个条件都会使索引进行滚动：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">POST &#x2F;logs_write&#x2F;_rollover </span><br><span class="line">&#123;</span><br><span class="line">  &quot;conditions&quot;: &#123;</span><br><span class="line">    &quot;max_age&quot;:   &quot;7d&quot;,</span><br><span class="line">    &quot;max_docs&quot;:  1000,</span><br><span class="line">    &quot;max_size&quot;:  &quot;5gb&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们想要对索引进行查询的时候，使用logs_write指向正在写入的索引，使用log_search指向所有的形如log*索引，当想要按照一定范围进行查询的时候，可以先计算出需要哪些索引，再按照一定的格式进行查询。如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># 查询全部内容</span><br><span class="line">GET logs_search&#x2F;_doc&#x2F;_search</span><br><span class="line"></span><br><span class="line"># 查询最新日志内容</span><br><span class="line">GET logs_write&#x2F;_doc&#x2F;_search</span><br><span class="line"></span><br><span class="line"># 想要查2,3月的索引内容</span><br><span class="line">GET logs-2019.02*,logs-2019.03*&#x2F;_doc&#x2F;_search</span><br><span class="line"></span><br><span class="line"># 想要查2019年的索引内容</span><br><span class="line">GET logs-2019*&#x2F;_doc&#x2F;_search</span><br></pre></td></tr></table></figure>
+
+<p>但所有类似的分割索引、分片的操作都有类似的问题，查询结果排序不是十分准确，这是es内部结构以及查询原理等决定的。</p>
+<h1 id="refernece"><a href="#refernece" class="headerlink" title="refernece"></a><strong>refernece</strong></h1><p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/indices-rollover-index.html" target="_blank" rel="noopener">官方文档Rollover Index</a><br><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates.html" target="_blank" rel="noopener">官方文档Index Templates</a><br><a href="https://www.elastic.co/blog/managing-time-based-indices-efficiently" target="_blank" rel="noopener">And the big one said “Rollover”</a>    </p>
+</section>
+    <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#elasticsearch" >
+    <span class="tag-code">elasticsearch</span>
+  </a>
+
+  <a href="/tags#滚动索引" >
+    <span class="tag-code">滚动索引</span>
+  </a>
+
+  <a href="/tags#rollover" >
+    <span class="tag-code">rollover</span>
+  </a>
+
+      </div>
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/05/12/hello-world/">
+        <span class="nav-arrow">← </span>
+        
+          Hello World
+        
+      </a>
+    
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#创建索引"><span class="toc-nav-text">创建索引</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#命名新的索引"><span class="toc-nav-text">命名新的索引</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#使用日期作为rollover-api"><span class="toc-nav-text">使用日期作为rollover api</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#定义新索引"><span class="toc-nav-text">定义新索引</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#测试执行"><span class="toc-nav-text">测试执行</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#写入索引别名"><span class="toc-nav-text">写入索引别名</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#示例"><span class="toc-nav-text">示例</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#refernece"><span class="toc-nav-text">refernece</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://yoursite.com/2020/05/12/rollover api/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "yanm1ng";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "es滚动索引 —— Rollover api",
+        owner: "yanm1ng",
+        repo: "yanm1ng.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>
