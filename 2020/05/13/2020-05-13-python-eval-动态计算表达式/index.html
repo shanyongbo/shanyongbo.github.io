@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="yanm1ng&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      Python eval() - 动态执行表达式 | shan
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="shan" type="application/atom+xml">
+</head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>shan</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>Python eval() - 动态执行表达式</h2>
+  <p class="post-date">2020-05-13</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><p>本文是一篇关于python <strong><code>eval()</code></strong> 函数的翻译文章，为个人学习使用。</p>
+<p>原文地址：<a href="https://realpython.com/python-eval-function/" target="_blank" rel="noopener">Python eval(): Evaluate Expressions Dynamically</a>  </p>
+<p>进度：<strong>未完成</strong></p>
+<p>Python 的 <strong><code>eval()</code></strong> 方法允许你去执行任意的基于字符串 (string-based) 或者基于编译代码(compiled-code-based) 的 python 表达式。当你尝试动态的执行基于字符串或者编译代码对象输入的 python 表达式的时候，这个函数就会变得非常有用。</p>
+<p>尽管 python 的 <code>eval()</code> 函数是一个非常有用的工具，但是在使用这个函数之前你需要知道，它同样有一些安全隐患。在这篇文档中，你会了解到 <code>eval()</code> 如何工作的以及如何在你的 python 程序中安全有效的使用它。</p>
+<p><strong>在这篇文档中，你将会了解</strong>：</p>
+<ul>
+<li>Python <strong><code>eval()</code></strong> 如何工作的</li>
+<li>怎样去使用 <code>eval()</code> 去<strong>动态执行</strong>基于字符串或者基于编译代码的任意输入</li>
+<li><code>eval()</code> 如何让你的代码变得不安全以及如何去最小化相关的<strong>安全风险</strong></li>
+</ul>
+<h2 id="Understanding-Python’s-eval"><a href="#Understanding-Python’s-eval" class="headerlink" title="Understanding Python’s eval()"></a>Understanding Python’s <code>eval()</code></h2><p>你可以使用 python 内置的函数 <strong><code>eval()</code></strong> 去动态执行基于字符串或者编译代码输入的表达式。如果你向<code>eval()</code> 方法传入一个字符串，那么接下来函数会去解析它，将它编译为字节码，然后作为Python表达式来执行。但是如果你用编译后的代码对象来调用 <code>eval()</code> 函数，那么函数就仅仅表现出执行步骤，如果你以相同的输入多次调用 <code>eval()</code> 方法，那么这么做是十分方便的。</p>
+<p>Python <code>eval()</code> 的签名定义如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eval(expression[, globals[, locals]])</span><br></pre></td></tr></table></figure>
+
+<p>这个函数接受的第一个参数，被称作为<strong>表达式(expression)</strong>，它保存着你需要执行的表达式。<code>eval()</code> 也接受两个可选参数：</p>
+<ol>
+<li>globals</li>
+<li>locals</li>
+</ol>
+<p>在接下来的三个部分，你会了解到这是哪个参数是什么以及<code>eval()</code> 如何使用它们去动态执行 Python 表达式。</p>
+<p>Note: 你也可以使用 <strong><code>exec()</code></strong> 去动态的执行 Python 的代码。<code>eval()</code> 和 <code>exec()</code> 最主要的不同是 <code>eval()</code> 仅可以执行 Python 的表达式，而 <code>exec()</code> 可以执行任意的 Python 代码。</p>
+<h3 id="The-First-Argument-expression"><a href="#The-First-Argument-expression" class="headerlink" title="The First Argument: expression"></a>The First Argument: <code>expression</code></h3><p><code>eval()</code> 的第一个参数被称为 <strong>表达式 (expression)</strong>. 它是必选参数，保存着传递给函数的<strong>基于字符串或者编译代码</strong>的输入。当你调用 <code>eval()</code> 时，表达式 的内容作为 Python 表达式被执行。查看下面基于字符串输入的例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(<span class="string">"2 ** 8"</span>)</span><br><span class="line"><span class="number">256</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(<span class="string">"1024 + 1024"</span>)</span><br><span class="line"><span class="number">2048</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(<span class="string">"sum([8, 16, 32])"</span>)</span><br><span class="line"><span class="number">56</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>x = <span class="number">100</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(<span class="string">"x * 2"</span>)</span><br><span class="line"><span class="number">200</span></span><br></pre></td></tr></table></figure>
+
+<p>当你使用字符串作为参数调用 <code>eval()</code> 的时候，函数的返回值是执行输入字符串得到的结果。因此，<code>eval()</code> 可以得到全局变量的值，比如上面例子中的 <code>x</code> 。</p>
+<p>为了执行一个基于字符串的表达式，Python 的 eval() 会以下面的步骤运行：</p>
+<pre><code>1. **解析**表达式
+ 2. 将它**编译**为字节码
+ 3. 作为Python表达式进行**执行**
+ 4. **返回**执行结果</code></pre><p>变量 expression 作为 <code>eval()</code> 的第一个参数突出表达了函数仅和表达式一起工作而不是<a href="https://docs.python.org/zh-cn/3/reference/compound_stmts.html" target="_blank" rel="noopener">复合语句</a>。Python文档中关于expression的定义如下：</p>
+<blockquote>
+<p><strong>expression</strong></p>
+<p>可以求出某个值的语法单元。 换句话说，一个表达式就是表达元素例如字面值、名称、属性访问、运算符或函数调用的汇总，它们最终都会返回一个值。 与许多其他语言不同，并非所有语言构件都是表达式。 还存在不能被用作表达式的 <a href="https://docs.python.org/zh-cn/3/glossary.html#term-statement" target="_blank" rel="noopener">statement</a>，例如 <a href="https://docs.python.org/zh-cn/3/reference/compound_stmts.html#while" target="_blank" rel="noopener"><code>while</code></a>。 赋值也是属于语句而非表达式。 (<a href="https://docs.python.org/zh-cn/3/glossary.html#term-expression" target="_blank" rel="noopener">Source</a>)</p>
+</blockquote>
+<p>另一方面，一个Python的语句有如下的定义：</p>
+<blockquote>
+<p><strong>statement</strong></p>
+<p>语句是程序段（一个代码“块”）的组成单位。一条语句可以是一个 <a href="https://docs.python.org/zh-cn/3/glossary.html#term-expression" target="_blank" rel="noopener">expression</a> 或某个带有关键字的结构，例如 <a href="https://docs.python.org/zh-cn/3/reference/compound_stmts.html#if" target="_blank" rel="noopener"><code>if</code></a>、<a href="https://docs.python.org/zh-cn/3/reference/compound_stmts.html#while" target="_blank" rel="noopener"><code>while</code></a> 或 <a href="https://docs.python.org/zh-cn/3/reference/compound_stmts.html#for" target="_blank" rel="noopener"><code>for</code></a>。 (<a href="https://docs.python.org/zh-cn/3/glossary.html#term-statement" target="_blank" rel="noopener">Source</a>)</p>
+</blockquote>
+<p>如果你尝试传递一个复合语句给 <code>eval()</code>, 然后就会产生一个  <a href="https://realpython.com/invalid-syntax-python/" target="_blank" rel="noopener"><code>SyntaxError</code></a>。查看下面的例子，在这个例子中你尝试使用 <code>eval()</code> 执行一个 <strong>if 语句</strong>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>x = <span class="number">100</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(<span class="string">"if x: print(x)"</span>)</span><br><span class="line">  File <span class="string">"&lt;string&gt;"</span>, line <span class="number">1</span></span><br><span class="line">    <span class="keyword">if</span> x: print(x)</span><br><span class="line">    ^</span><br><span class="line">SyntaxError: invalid syntax</span><br></pre></td></tr></table></figure>
+
+<p>如果你尝试使用 Python 的 <code>eval()</code> 方法执行一个复合语句，那么你会得到一个像上面的 <a href="https://realpython.com/python-traceback/" target="_blank" rel="noopener">trackback</a> 一样的 <code>SyntaxError</code>。这是因为 <code>eval()</code> 仅仅只接受表达式(expressions)。任何其它的诸如 <code>if</code>, <code>for</code>, <code>while</code>, <code>import</code>, <code>def</code>, 或者 <code>class</code> 的语句， 都会产生一个<code>error</code>。</p>
+<p><strong>Note</strong>:  一个 <code>for</code> 循环是一个复合语句，但是 <code>for</code> 关键字可以被用在<a href="https://realpython.com/courses/using-list-comprehensions-effectively/" target="_blank" rel="noopener">推导式 ( comprehensions )</a> 中，这被认为是一个表达式。你可以使用 <code>eval()</code> 去执行推导式 ( comprehensions ) 即使它使用了 <code>for</code> 关键字。</p>
+<p>赋值操作也同样不被允许用在 <code>eval()</code> 中。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(<span class="string">"pi = 3.1416"</span>)</span><br><span class="line">  File <span class="string">"&lt;string&gt;"</span>, line <span class="number">1</span></span><br><span class="line">    pi = <span class="number">3.1416</span></span><br><span class="line">       ^</span><br><span class="line">SyntaxError: invalid syntax</span><br></pre></td></tr></table></figure>
+
+<p>如果你尝试</p>
+<p>If you try to pass an assignment operation as an argument to Python’s <code>eval()</code>, then you’ll get a <code>SyntaxError</code>. Assignment operations are statements rather than expressions, and statements aren’t allowed with <code>eval()</code>.</p>
+<p>You’ll also get a <code>SyntaxError</code> any time the parser doesn’t understand the input expression. Take a look at the following example in which you try to evaluate an expression that violates Python syntax:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; # Incomplete expression</span><br><span class="line">&gt;&gt;&gt; eval(&quot;5 + 7 *&quot;)</span><br><span class="line">  File &quot;&lt;string&gt;&quot;, line 1</span><br><span class="line">    5 + 7 *</span><br><span class="line">          ^</span><br><span class="line">SyntaxError: unexpected EOF while parsing</span><br></pre></td></tr></table></figure>
+
+<p>You can’t pass an expression to <code>eval()</code> that violates Python syntax. In the above example, you try to evaluate an incomplete expression (<code>&quot;5 + 7 *&quot;</code>) and get a <code>SyntaxError</code> because the parser doesn’t understand the syntax of the expression.</p>
+<p>You can also pass <a href="https://docs.python.org/3/library/stdtypes.html#code-objects" target="_blank" rel="noopener">compiled code objects</a> to Python’s <code>eval()</code>. To compile the code that you’re going to pass to <code>eval()</code>, you can use <a href="https://docs.python.org/3/library/functions.html#compile" target="_blank" rel="noopener"><code>compile()</code></a>. This is a built-in function that can compile an input string into a <a href="https://docs.python.org/3/library/stdtypes.html#code-objects" target="_blank" rel="noopener">code object</a> or an <a href="https://docs.python.org/3/library/ast.html#ast.AST" target="_blank" rel="noopener">AST object</a> so that you can evaluate it with <code>eval()</code>.</p>
+<p>The details of how to use <code>compile()</code> are beyond the scope of this tutorial, but here’s a quick look at its first three required arguments:</p>
+<ol>
+<li><strong><code>source</code></strong> holds the source code that you want to compile. This argument accepts normal strings, <a href="https://docs.python.org/3/library/stdtypes.html#bytes-objects" target="_blank" rel="noopener">byte strings</a>, and AST objects.</li>
+<li><strong><code>filename</code></strong> gives the file from which the code was read. If you’re going to use a string-based input, then the value for this argument should be <code>&quot;&quot;</code>.</li>
+<li><strong><code>mode</code></strong> specifies which kind of compiled code you want to get. If you want to process the compiled code with <code>eval()</code>, then this argument should be set to <code>&quot;eval&quot;</code>.</li>
+</ol>
+<p><strong>Note:</strong> For more information on <code>compile()</code>, check out the <a href="https://docs.python.org/3/library/functions.html#compile" target="_blank" rel="noopener">official documentation</a>.</p>
+<p>You can use <code>compile()</code> to supply code objects to <code>eval()</code> instead of normal strings. Check out the following examples:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; # Arithmetic operations</span><br><span class="line">&gt;&gt;&gt; code &#x3D; compile(&quot;5 + 4&quot;, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">&gt;&gt;&gt; eval(code)</span><br><span class="line">9</span><br><span class="line">&gt;&gt;&gt; code &#x3D; compile(&quot;(5 + 7) * 2&quot;, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">&gt;&gt;&gt; eval(code)</span><br><span class="line">24</span><br><span class="line">&gt;&gt;&gt; import math</span><br><span class="line">&gt;&gt;&gt; # Volume of a sphere</span><br><span class="line">&gt;&gt;&gt; code &#x3D; compile(&quot;4 &#x2F; 3 * math.pi * math.pow(25, 3)&quot;, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">&gt;&gt;&gt; eval(code)</span><br><span class="line">65449.84694978735</span><br></pre></td></tr></table></figure>
+
+<p>If you use <code>compile()</code> to compile the expressions that you’re going to pass to <code>eval()</code>, then <code>eval()</code> goes through the following steps:</p>
+<ol>
+<li><strong>Evaluate</strong> the compiled code</li>
+<li><strong>Return</strong> the result of the evaluation</li>
+</ol>
+<p>If you call Python’s <code>eval()</code> using a compiled-code-based input, then the function performs the evaluation step and immediately returns the result. This can be handy when you need to evaluate the same expression multiple times. In this case, it’s best to precompile the expression and reuse the resulting bytecode on subsequent calls to <code>eval()</code>.</p>
+<p>If you compile the input expression beforehand, then successive calls to <code>eval()</code> will run faster because you won’t be repeating the <strong>parsing</strong> and <strong>compiling</strong> steps. Unneeded repetitions can lead to high CPU times and excessive memory consumption if you’re evaluating complex expressions.</p>
+<h3 id="The-Second-Argument-globals"><a href="#The-Second-Argument-globals" class="headerlink" title="The Second Argument: globals"></a>The Second Argument: <code>globals</code></h3><p>The second argument to <code>eval()</code> is called <strong><code>globals</code></strong>. It’s optional and holds a <a href="https://realpython.com/python-dicts/" target="_blank" rel="noopener">dictionary</a> that provides a global <a href="https://realpython.com/python-scope-legb-rule/#python-scope-vs-namespace" target="_blank" rel="noopener">namespace</a> to <code>eval()</code>. With <code>globals</code>, you can tell <code>eval()</code> which global names to use while evaluating <code>expression</code>.</p>
+<p>Global names are all those names that are available in your <a href="https://realpython.com/python-scope-legb-rule/#modules-the-global-scope" target="_blank" rel="noopener">current global scope or namespace</a>. You can access them from anywhere in your code.</p>
+<p>All the names passed to <code>globals</code> in a dictionary will be available to <code>eval()</code> at execution time. Check out the following example, which shows how to use a custom dictionary to supply a global namespace to <code>eval()</code>:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; x &#x3D; 100  # A global variable</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x + 100&quot;, &#123;&quot;x&quot;: x&#125;)</span><br><span class="line">200</span><br><span class="line">&gt;&gt;&gt; y &#x3D; 200  # Another global variable</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x + y&quot;, &#123;&quot;x&quot;: x&#125;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">NameError: name &#39;y&#39; is not defined</span><br></pre></td></tr></table></figure>
+
+<p>If you supply a custom dictionary to the <code>globals</code> argument of <code>eval()</code>, then <code>eval()</code> will take only those names as globals. Any global names defined outside of this custom dictionary won’t be accessible from inside <code>eval()</code>. That’s why Python raises a <code>NameError</code> when you try to access <code>y</code> in the above code: The dictionary passed to <code>globals</code> doesn’t include <code>y</code>.</p>
+<p>You can insert names into <code>globals</code> by listing them in your dictionary, and then those names will be available during the evaluation process. For example, if you insert <code>y</code> into <code>globals</code>, then the evaluation of <code>&quot;x + y&quot;</code> in the above example will work as expected:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;x + y&quot;, &#123;&quot;x&quot;: x, &quot;y&quot;: y&#125;)</span><br><span class="line">300</span><br></pre></td></tr></table></figure>
+
+<p>Since you add <code>y</code> to your custom <code>globals</code> dictionary, the evaluation of <code>&quot;x + y&quot;</code> is successful and you get the expected return value of <code>300</code>.</p>
+<p>You can also supply names that don’t exist in your current global scope. For this to work, you need to supply a concrete value for each name. <code>eval()</code> will interpret these names as global names when running:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;x + y + z&quot;, &#123;&quot;x&quot;: x, &quot;y&quot;: y, &quot;z&quot;: 300&#125;)</span><br><span class="line">600</span><br><span class="line">&gt;&gt;&gt; z</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">NameError: name &#39;z&#39; is not defined</span><br></pre></td></tr></table></figure>
+
+<p>Even though <code>z</code> isn’t defined in your current global scope, the <a href="https://realpython.com/python-variables/" target="_blank" rel="noopener">variable</a> is present in <code>globals</code> with a value of <code>300</code>. In this case, <code>eval()</code> has access to <code>z</code> as though it were a global variable.</p>
+<p>The mechanism behind <code>globals</code> is quite flexible. You can pass any visible variable (global, <a href="https://realpython.com/python-scope-legb-rule/#nested-functions-the-enclosing-scope" target="_blank" rel="noopener">local</a>, or <a href="https://realpython.com/python-scope-legb-rule/#nested-functions-the-enclosing-scope" target="_blank" rel="noopener">nonlocal</a>) to <code>globals</code>. You can also pass custom key-value pairs like <code>&quot;z&quot;: 300</code> in the above example. <code>eval()</code> will treat all of them as global variables.</p>
+<p>An important point regarding <code>globals</code> is that if you supply a custom dictionary to it that doesn’t contain a value for the key <code>&quot;__builtins__&quot;</code>, then a reference to the dictionary of <a href="https://docs.python.org/3/library/builtins.html#module-builtins" target="_blank" rel="noopener"><code>builtins</code></a> will be automatically inserted under <code>&quot;__builtins__&quot;</code> before <code>expression</code> gets parsed. This ensures that <code>eval()</code> will have full access to all of Python’s built-in names when evaluating <code>expression</code>.</p>
+<p>The following examples show that even though you supply an empty dictionary to <code>globals</code>, the call to <code>eval()</code> will still have access to Python’s built-in names:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;sum([2, 2, 2])&quot;, &#123;&#125;)</span><br><span class="line">6</span><br><span class="line">&gt;&gt;&gt; eval(&quot;min([1, 2, 3])&quot;, &#123;&#125;)</span><br><span class="line">1</span><br><span class="line">&gt;&gt;&gt; eval(&quot;pow(10, 2)&quot;, &#123;&#125;)</span><br><span class="line">100</span><br></pre></td></tr></table></figure>
+
+<p>In the above code, you supply an empty dictionary (<code>{}</code>) to <code>globals</code>. Since that dictionary doesn’t contain a key called <code>&quot;__builtins__&quot;</code>, Python automatically inserts one with a reference to the names in <code>builtins</code>. This way, <code>eval()</code> has full access to all of Python’s built-in names when it parses <code>expression</code>.</p>
+<p>If you call <code>eval()</code> without passing a custom dictionary to <code>globals</code>, then the argument will default to the dictionary returned by <a href="https://realpython.com/python-scope-legb-rule/#globals" target="_blank" rel="noopener"><code>globals()</code></a> in the environment where <code>eval()</code> is called:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; x &#x3D; 100  # A global variable</span><br><span class="line">&gt;&gt;&gt; y &#x3D; 200  # Another global variable</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x + y&quot;)  # Access both global variables</span><br><span class="line">300</span><br></pre></td></tr></table></figure>
+
+<p>When you call <code>eval()</code> without supplying a <code>globals</code> argument, the function evaluates <code>expression</code> using the dictionary returned by <code>globals()</code> as its global namespace. So, in the above example, you can freely access <code>x</code> and <code>y</code> because they’re global variables included in your current <a href="https://realpython.com/python-scope-legb-rule/#modules-the-global-scope" target="_blank" rel="noopener">global scope</a>.</p>
+<h3 id="The-Third-Argument-locals"><a href="#The-Third-Argument-locals" class="headerlink" title="The Third Argument: locals"></a>The Third Argument: <code>locals</code></h3><p>Python’s <code>eval()</code> takes a third argument called <strong><code>locals</code></strong>. This is another optional argument that holds a dictionary. In this case, the dictionary contains the variables that <code>eval()</code> uses as local names when evaluating <code>expression</code>.</p>
+<p>Local names are those names (<a href="https://realpython.com/python-variables/" target="_blank" rel="noopener">variables</a>, <a href="https://realpython.com/defining-your-own-python-function/" target="_blank" rel="noopener">functions</a>, <a href="https://realpython.com/courses/intro-object-oriented-programming-oop-python/" target="_blank" rel="noopener">classes</a>, and so on) that you define inside a given function. Local names are visible only from inside the enclosing function. You define these kinds of names when you’re writing a function.</p>
+<p>Since <code>eval()</code> is already written, you can’t add local names to its code or <a href="https://realpython.com/python-scope-legb-rule/#functions-the-global-scope" target="_blank" rel="noopener">local scope</a>. However, you can pass a dictionary to <code>locals</code>, and <code>eval()</code> will treat those names as local names:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;x + 100&quot;, &#123;&#125;, &#123;&quot;x&quot;: 100&#125;)</span><br><span class="line">200</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x + y&quot;, &#123;&#125;, &#123;&quot;x&quot;: 100&#125;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">NameError: name &#39;y&#39; is not defined</span><br></pre></td></tr></table></figure>
+
+<p>The second dictionary in the first call to <code>eval()</code> holds the variable <code>x</code>. This variable is interpreted by <code>eval()</code> as a local variable. In other words, it’s seen as a variable defined in the body of <code>eval()</code>.</p>
+<p>You can use <code>x</code> in <code>expression</code>, and <code>eval()</code> will have access to it. In contrast, if you try to use <code>y</code>, then you’ll get a <code>NameError</code> because <code>y</code> isn’t defined in either the <code>globals</code> namespace or the <code>locals</code> namespace.</p>
+<p>Like with <code>globals</code>, you can pass any visible variable (global, local, or nonlocal) to <code>locals</code>. You can also pass custom key-value pairs like <code>&quot;x&quot;: 100</code> in the above example. <code>eval()</code> will treat all of them as local variables.</p>
+<p>Note that to supply a dictionary to <code>locals</code>, you first need to supply a dictionary to <code>globals</code>. It’s not possible to use keyword arguments with <code>eval()</code>:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;x + 100&quot;, locals&#x3D;&#123;&quot;x&quot;: 100&#125;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">TypeError: eval() takes no keyword arguments</span><br></pre></td></tr></table></figure>
+
+<p>If you try to use keyword arguments when calling <code>eval()</code>, then you’ll get a <code>TypeError</code> explaining that <code>eval()</code> takes no keyword arguments. So, you need to supply a <code>globals</code> dictionary before you can supply a <code>locals</code> dictionary.</p>
+<p>If you don’t pass a dictionary to <code>locals</code>, then it defaults to the dictionary passed to <code>globals</code>. Here’s an example in which you pass an empty dictionary to <code>globals</code> and nothing to <code>locals</code>:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; x &#x3D; 100</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x + 100&quot;, &#123;&#125;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">NameError: name &#39;x&#39; is not defined</span><br></pre></td></tr></table></figure>
+
+<p>Given that you don’t provide a custom dictionary to <code>locals</code>, the argument defaults to the dictionary passed to <code>globals</code>. In this case, <code>eval()</code> doesn’t have access to <code>x</code> because <code>globals</code> holds an empty dictionary.</p>
+<p>The main practical difference between <code>globals</code> and <code>locals</code> is that Python will automatically insert a <code>&quot;__builtins__&quot;</code> key into <code>globals</code> if that key doesn’t already exist. This happens whether or not you supply a custom dictionary to <code>globals</code>. On the other hand, if you supply a custom dictionary to <code>locals</code>, then that dictionary will remain unchanged during the execution of <code>eval()</code>.</p>
+<h2 id="Evaluating-Expressions-With-Python’s-eval"><a href="#Evaluating-Expressions-With-Python’s-eval" class="headerlink" title="Evaluating Expressions With Python’s eval()"></a>Evaluating Expressions With Python’s <code>eval()</code></h2><p>You can use Python’s <code>eval()</code> to evaluate any kind of Python expression but not Python statements such as keyword-based compound statements or assignment statements.</p>
+<p><code>eval()</code> can be handy when you need to dynamically evaluate expressions and using other Python techniques or tools would considerably increase your development time and effort. In this section, you’ll learn how you can use Python’s <code>eval()</code> to evaluate Boolean, math, and general-purpose Python expressions.</p>
+<h3 id="Boolean-Expressions"><a href="#Boolean-Expressions" class="headerlink" title="Boolean Expressions"></a>Boolean Expressions</h3><p><a href="https://realpython.com/python-or-operator/#boolean-logic" target="_blank" rel="noopener"><strong>Boolean expressions</strong></a> are Python expressions that return a truth value (<code>True</code> or <code>False</code>) when the interpreter evaluates them. They’re commonly used in <code>if</code> statements to check if some condition is true or false. Since Boolean expressions aren’t compound statements, you can use <code>eval()</code> to evaluate them:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; x &#x3D; 100</span><br><span class="line">&gt;&gt;&gt; y &#x3D; 100</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x !&#x3D; y&quot;)</span><br><span class="line">False</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x &lt; 200 and y &gt; 100&quot;)</span><br><span class="line">False</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x is y&quot;)</span><br><span class="line">True</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x in &#123;50, 100, 150, 200&#125;&quot;)</span><br><span class="line">True</span><br></pre></td></tr></table></figure>
+
+<p>You can use <code>eval()</code> with Boolean expressions that use any of the following Python operators:</p>
+<ul>
+<li><a href="https://docs.python.org/3/reference/expressions.html#value-comparisons" target="_blank" rel="noopener"><strong>Value comparison operators</strong></a>: <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>==</code>, <code>!=</code></li>
+<li><a href="https://docs.python.org/3/reference/expressions.html#boolean-operations" target="_blank" rel="noopener"><strong>Logical (Boolean) operators</strong></a>: <code>and</code>, <a href="https://realpython.com/python-or-operator/" target="_blank" rel="noopener"><code>or</code></a>, <code>not</code></li>
+<li><a href="https://docs.python.org/3/reference/expressions.html#membership-test-operations" target="_blank" rel="noopener"><strong>Membership test operators</strong></a>: <code>in</code>, <code>not in</code></li>
+<li><a href="https://docs.python.org/3/reference/expressions.html#is-not" target="_blank" rel="noopener"><strong>Identity operators</strong></a>: <code>is</code>, <code>is not</code></li>
+</ul>
+<p>In all cases, the function returns the truth value of the expression that you’re evaluating.</p>
+<p>Now, you may be thinking, why should I use <code>eval()</code> instead of using the Boolean expression directly? Well, suppose you need to implement a conditional statement, but you want to change the condition on the fly:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; def func(a, b, condition):</span><br><span class="line">...     if eval(condition):</span><br><span class="line">...         return a + b</span><br><span class="line">...     return a - b</span><br><span class="line">...</span><br><span class="line">&gt;&gt;&gt; func(2, 4, &quot;a &gt; b&quot;)</span><br><span class="line">-2</span><br><span class="line">&gt;&gt;&gt; func(2, 4, &quot;a &lt; b&quot;)</span><br><span class="line">6</span><br><span class="line">&gt;&gt;&gt; func(2, 2, &quot;a is b&quot;)</span><br><span class="line">4</span><br></pre></td></tr></table></figure>
+
+<p>Inside <code>func()</code>, you use <code>eval()</code> to evaluate the supplied <code>condition</code> and return either <code>a + b</code> or <code>a - b</code> according to the result of the evaluation. You use just a few different conditions in the above example, but you could use any number of others provided that you stick with the names <code>a</code> and <code>b</code> that you defined in <code>func()</code>.</p>
+<p>Now imagine how you would implement something like this without the use of Python’s <code>eval()</code>. Would that take less code and time? No way!</p>
+<h3 id="Math-Expressions"><a href="#Math-Expressions" class="headerlink" title="Math Expressions"></a>Math Expressions</h3><p>One common use case of Python’s <code>eval()</code> is to evaluate math expressions from a string-based input. For example, if you want to create a <a href="https://realpython.com/python-pyqt-gui-calculator/" target="_blank" rel="noopener">Python calculator</a>, then you can use <code>eval()</code> to evaluate the user’s input and return the result of the calculations.</p>
+<p>The following examples show how you can use <code>eval()</code> along with <a href="https://realpython.com/python-math-module/" target="_blank" rel="noopener"><code>math</code></a> to perform math operations:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; # Arithmetic operations</span><br><span class="line">&gt;&gt;&gt; eval(&quot;5 + 7&quot;)</span><br><span class="line">12</span><br><span class="line">&gt;&gt;&gt; eval(&quot;5 * 7&quot;)</span><br><span class="line">35</span><br><span class="line">&gt;&gt;&gt; eval(&quot;5 ** 7&quot;)</span><br><span class="line">78125</span><br><span class="line">&gt;&gt;&gt; eval(&quot;(5 + 7) &#x2F; 2&quot;)</span><br><span class="line">6.0</span><br><span class="line">&gt;&gt;&gt; import math</span><br><span class="line">&gt;&gt;&gt; # Area of a circle</span><br><span class="line">&gt;&gt;&gt; eval(&quot;math.pi * pow(25, 2)&quot;)</span><br><span class="line">1963.4954084936207</span><br><span class="line">&gt;&gt;&gt; # Volume of a sphere</span><br><span class="line">&gt;&gt;&gt; eval(&quot;4 &#x2F; 3 * math.pi * math.pow(25, 3)&quot;)</span><br><span class="line">65449.84694978735</span><br><span class="line">&gt;&gt;&gt; # Hypotenuse of a right triangle</span><br><span class="line">&gt;&gt;&gt; eval(&quot;math.sqrt(math.pow(10, 2) + math.pow(15, 2))&quot;)</span><br><span class="line">18.027756377319946</span><br></pre></td></tr></table></figure>
+
+<p>When you use <code>eval()</code> to evaluate math expressions, you can pass in expressions of any kind or complexity. <code>eval()</code> will parse them, evaluate them and, if everything is okay, give you the expected result.</p>
+<h3 id="General-Purpose-Expressions"><a href="#General-Purpose-Expressions" class="headerlink" title="General-Purpose Expressions"></a>General-Purpose Expressions</h3><p>So far, you’ve learned how to use <code>eval()</code> with Boolean and math expressions. However, you can use <code>eval()</code> with more complex Python expressions that incorporate function calls, object creation, attribute access, comprehensions, and so on.</p>
+<p>For example, you can call a built-in function or one that you’ve imported with a standard or third-party module:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; # Run the echo command</span><br><span class="line">&gt;&gt;&gt; import subprocess</span><br><span class="line">&gt;&gt;&gt; eval(&quot;subprocess.getoutput(&#39;echo Hello, World&#39;)&quot;)</span><br><span class="line">&#39;Hello, World&#39;</span><br><span class="line">&gt;&gt;&gt; # Launch Firefox (if available)</span><br><span class="line">&gt;&gt;&gt; eval(&quot;subprocess.getoutput(&#39;firefox&#39;)&quot;)</span><br><span class="line">&#39;&#39;</span><br></pre></td></tr></table></figure>
+
+<p>In this example, you use Python’s <code>eval()</code> to execute a few system commands. As you can imagine, you can do a <em>ton</em> of useful things with this feature. However, <code>eval()</code> can also expose you to serious security risks, like allowing a malicious user to run system commands or any arbitrary piece of code in your machine.</p>
+<p>In the next section, you’ll look at ways to address some of the security risks associated with eval().</p>
+<h2 id="Minimizing-the-Security-Issues-of-eval"><a href="#Minimizing-the-Security-Issues-of-eval" class="headerlink" title="Minimizing the Security Issues of eval()"></a>Minimizing the Security Issues of <code>eval()</code></h2><p>Although it has an almost unlimited number of uses, Python’s <code>eval()</code> also has important <strong>security implications</strong>. <code>eval()</code> is considered insecure because it allows you (or your users) to dynamically execute arbitrary Python code.</p>
+<p>This is considered bad programming practice because the code that you’re reading (or writing) is <em>not</em> the code that you’ll execute. If you’re planning to use <code>eval()</code> to evaluate input from a user or any other external source, then you won’t know for sure what code is going to be executed. That’s a serious security risk if your application runs in the wrong hands.</p>
+<p>For this reason, good programming practices generally recommend against using <code>eval()</code>. But if you choose to use the function anyway, then the rule of thumb is to <em>never ever</em> use it with <strong>untrusted input</strong>. The tricky part of this rule is figuring out which kinds of input you can trust.</p>
+<p>As an example of how using <code>eval()</code> irresponsibly can make your code insecure, suppose you want to build an online service for evaluating arbitrary Python expressions. Your user will introduce expressions and then click the <code>Run</code> button. The application will get the user’s input and pass it to <code>eval()</code> for evaluation.</p>
+<p>This application will run on your personal server. Yes, the same server where you have all those valuable files. If you’re running a Linux box and the application’s process has the right permissions, then a malicious user could introduce a dangerous string like the following:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;__import__(&#39;subprocess&#39;).getoutput(&#39;rm –rf *&#39;)&quot;</span><br></pre></td></tr></table></figure>
+
+<p>The above code would delete all the files in the application’s current directory. That would be awful, wouldn’t it?</p>
+<p><strong>Note:</strong> <a href="https://docs.python.org/3/library/functions.html#__import__" target="_blank" rel="noopener"><code>__import__()</code></a> is a built-in function that takes a module name as a string and returns a reference to the module object. <code>__import__()</code> is a function, which is totally different from an <code>import</code> statement. You can’t evaluate an <code>import</code> statement using <code>eval()</code>.</p>
+<p>When the input is untrusted, there’s no completely effective way to avoid the security risks associated with <code>eval()</code>. However, you can minimize your risk by restricting the execution environment of <code>eval()</code>. You’ll learn a few techniques for doing so in the following sections.</p>
+<h3 id="Restricting-globals-and-locals"><a href="#Restricting-globals-and-locals" class="headerlink" title="Restricting globals and locals"></a>Restricting <code>globals</code> and <code>locals</code></h3><p>You can restrict the execution environment of <code>eval()</code> by passing custom dictionaries to the <code>globals</code> and <code>locals</code> arguments. For example, you can pass empty dictionaries to both arguments to prevent <code>eval()</code> from accessing names in the caller’s <a href="https://realpython.com/python-scope-legb-rule/#python-scope-vs-namespace" target="_blank" rel="noopener">current scope or namespace</a>:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; # Avoid access to names in the caller&#39;s current scope</span><br><span class="line">&gt;&gt;&gt; x &#x3D; 100</span><br><span class="line">&gt;&gt;&gt; eval(&quot;x * 5&quot;, &#123;&#125;, &#123;&#125;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">NameError: name &#39;x&#39; is not defined</span><br></pre></td></tr></table></figure>
+
+<p>If you pass empty dictionaries (<code>{}</code>) to <code>globals</code> and <code>locals</code>, then <code>eval()</code> won’t find the name <code>x</code> in either its global namespace or its local namespace when evaluating the string <code>&quot;x * 5&quot;</code>. As a result, <code>eval()</code> will throw a <code>NameError</code>.</p>
+<p>Unfortunately, restricting the <code>globals</code> and <code>locals</code> arguments like this doesn’t eliminate all the security risks associated with the use of Python’s <code>eval()</code>, because you can still access all of Python’s built-in names.</p>
+<h3 id="Restricting-the-Use-of-Built-In-Names"><a href="#Restricting-the-Use-of-Built-In-Names" class="headerlink" title="Restricting the Use of Built-In Names"></a>Restricting the Use of Built-In Names</h3><p>As you saw earlier, Python’s <code>eval()</code> automatically inserts a reference to the dictionary of <code>builtins</code> into <code>globals</code> before parsing <code>expression</code>. A malicious user could exploit this behavior by using the built-in function <code>__import__()</code> to get access to the standard library and any third-party module that you’ve installed on your system.</p>
+<p>The following examples show that you can use any built-in function and any standard module like <code>math</code> or <code>subprocess</code> even after you’ve restricted <code>globals</code> and <code>locals</code>:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;sum([5, 5, 5])&quot;, &#123;&#125;, &#123;&#125;)</span><br><span class="line">15</span><br><span class="line">&gt;&gt;&gt; eval(&quot;__import__(&#39;math&#39;).sqrt(25)&quot;, &#123;&#125;, &#123;&#125;)</span><br><span class="line">5.0</span><br><span class="line">&gt;&gt;&gt; eval(&quot;__import__(&#39;subprocess&#39;).getoutput(&#39;echo Hello, World&#39;)&quot;, &#123;&#125;, &#123;&#125;)</span><br><span class="line">&#39;Hello, World&#39;</span><br></pre></td></tr></table></figure>
+
+<p>Even though you restrict <code>globals</code> and <code>locals</code> using empty dictionaries, you can still use any built-in function like you did with <code>sum()</code> and <code>__import__()</code> in the above code.</p>
+<p>You can use <code>__import__()</code> to import any standard or third-party module just like you did above with <code>math</code> and <code>subprocess</code>. With this technique, you can access any function or class defined in <code>math</code>, <code>subprocess</code>, or any other module. Now imagine what a malicious user could do to your system using <code>subprocess</code> or any other powerful module in the standard library.</p>
+<p>To minimize this risk, you can restrict access to Python’s built-in functions by overriding the <code>&quot;__builtins__&quot;</code> key in <code>globals</code>. Good practice recommends using a custom dictionary containing the key-value pair <code>&quot;__builtins__&quot;: {}</code>. Check out the following example:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(&quot;__import__(&#39;math&#39;).sqrt(25)&quot;, &#123;&quot;__builtins__&quot;: &#123;&#125;&#125;, &#123;&#125;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">NameError: name &#39;__import__&#39; is not defined</span><br></pre></td></tr></table></figure>
+
+<p>If you pass a dictionary containing the key-value pair <code>&quot;__builtins__&quot;: {}</code> to <code>globals</code>, then <code>eval()</code> won’t have direct access to Python’s built-in functions like <code>__import__()</code>. However, as you’ll see in the next section, this approach still doesn’t make <code>eval()</code> completely secure.</p>
+<h3 id="Restricting-Names-in-the-Input"><a href="#Restricting-Names-in-the-Input" class="headerlink" title="Restricting Names in the Input"></a>Restricting Names in the Input</h3><p>Even though you can restrict the execution environment of Python’s <code>eval()</code> using custom <code>globals</code> and <code>locals</code> dictionaries, the function will still be vulnerable to a few fancy tricks. For example, you can access the class <a href="https://docs.python.org/3/library/functions.html#object" target="_blank" rel="noopener"><code>object</code></a> using a <strong>type literal</strong> like <code>&quot;&quot;</code>, <code>[]</code>, <code>{}</code>, or <code>()</code> along with some special attributes:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; &quot;&quot;.__class__.__base__</span><br><span class="line">&lt;class &#39;object&#39;&gt;</span><br><span class="line">&gt;&gt;&gt; [].__class__.__base__</span><br><span class="line">&lt;class &#39;object&#39;&gt;</span><br><span class="line">&gt;&gt;&gt; &#123;&#125;.__class__.__base__</span><br><span class="line">&lt;class &#39;object&#39;&gt;</span><br><span class="line">&gt;&gt;&gt; ().__class__.__base__</span><br><span class="line">&lt;class &#39;object&#39;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Once you have access to <code>object</code>, you can use the special method <a href="https://docs.python.org/3/library/stdtypes.html#class.__subclasses__" target="_blank" rel="noopener"><code>.__subclasses__()</code></a> to get access to all of the classes that inherit from <code>object</code>. Here’s how it works:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; for sub_class in ().__class__.__base__.__subclasses__():</span><br><span class="line">...     print(sub_class.__name__)</span><br><span class="line">...</span><br><span class="line">type</span><br><span class="line">weakref</span><br><span class="line">weakcallableproxy</span><br><span class="line">weakproxy</span><br><span class="line">int</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>This code will print a large list of classes to your screen. Some of these classes are quite powerful and can be extremely dangerous in the wrong hands. This opens up another important security hole that you can’t close by simply restricting the execution environment of <code>eval()</code>:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; input_string &#x3D; &quot;&quot;&quot;[</span><br><span class="line">...     c for c in ().__class__.__base__.__subclasses__()</span><br><span class="line">...     if c.__name__ &#x3D;&#x3D; &quot;range&quot;</span><br><span class="line">... ][0](10)&quot;&quot;&quot;</span><br><span class="line">&gt;&gt;&gt; list(eval(input_string, &#123;&quot;__builtins__&quot;: &#123;&#125;&#125;, &#123;&#125;))</span><br><span class="line">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span><br></pre></td></tr></table></figure>
+
+<p>The list comprehension in the above code filters the classes that inherit from <code>object</code> to return a <code>list</code> containing the class <a href="https://realpython.com/python-range/" target="_blank" rel="noopener"><code>range</code></a>. The first index (<code>[0]</code>) returns the class <code>range</code>. Once you have access to <code>range</code>, you call it to generate a <code>range</code> object. Then you call <code>list()</code> on the <code>range</code> object to generate a list of ten integers.</p>
+<p>In this example, you use <code>range</code> to illustrate a security hole in <code>eval()</code>. Now imagine what a malicious user could do if your system exposed classes like <a href="https://docs.python.org/3/library/subprocess.html#subprocess.Popen" target="_blank" rel="noopener"><code>subprocess.Popen</code></a>.</p>
+<p><strong>Note:</strong> For a deeper dive into the vulnerabilities of <code>eval()</code>, check out Ned Batchelder’s article, <a href="http://nedbatchelder.com/blog/201206/eval_really_is_dangerous.html" target="_blank" rel="noopener">Eval really is dangerous.</a></p>
+<p>A possible solution to this vulnerability is to restrict the use of names in the input, either to a bunch of <em>safe</em> names or to <em>no</em> names at all. To implement this technique, you need to go through the following steps:</p>
+<ol>
+<li><strong>Create</strong> a dictionary containing the names that you want to use with <code>eval()</code>.</li>
+<li><strong>Compile</strong> the input string to bytecode using <code>compile()</code> in mode <code>&quot;eval&quot;</code>.</li>
+<li><strong>Check</strong> <code>.co_names</code> on the bytecode object to make sure it contains only allowed names.</li>
+<li><strong>Raise</strong> a <code>NameError</code> if the user tries to enter a name that’s not allowed.</li>
+</ol>
+<p>Take a look at the following function in which you implement all these steps:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; def eval_expression(input_string):</span><br><span class="line">...     # Step 1</span><br><span class="line">...     allowed_names &#x3D; &#123;&quot;sum&quot;: sum&#125;</span><br><span class="line">...     # Step 2</span><br><span class="line">...     code &#x3D; compile(input_string, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">...     # Step 3</span><br><span class="line">...     for name in code.co_names:</span><br><span class="line">...         if name not in allowed_names:</span><br><span class="line">...             # Step 4</span><br><span class="line">...             raise NameError(f&quot;Use of &#123;name&#125; not allowed&quot;)</span><br><span class="line">...     return eval(code, &#123;&quot;__builtins__&quot;: &#123;&#125;&#125;, allowed_names)</span><br></pre></td></tr></table></figure>
+
+<p>In <code>eval_expression()</code>, you implement all of the steps you saw before. This function restricts the names that you can use with <code>eval()</code> to only those names in the dictionary <code>allowed_names</code>. To do this, the function uses <code>.co_names</code>, which is an attribute of a code object that returns a <a href="https://realpython.com/python-lists-tuples/#python-tuples" target="_blank" rel="noopener">tuple</a> containing the names in the code object.</p>
+<p>The following examples show how <code>eval_expression()</code> works in practice:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval_expression(&quot;3 + 4 * 5 + 25 &#x2F; 2&quot;)</span><br><span class="line">35.5</span><br><span class="line">&gt;&gt;&gt; eval_expression(&quot;sum([1, 2, 3])&quot;)</span><br><span class="line">6</span><br><span class="line">&gt;&gt;&gt; eval_expression(&quot;len([1, 2, 3])&quot;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 10, in eval_expression</span><br><span class="line">NameError: Use of len not allowed</span><br><span class="line">&gt;&gt;&gt; eval_expression(&quot;pow(10, 2)&quot;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 10, in eval_expression</span><br><span class="line">NameError: Use of pow not allowed</span><br></pre></td></tr></table></figure>
+
+<p>If you call <code>eval_expression()</code> to evaluate arithmetic operations, or if you use expressions that include allowed names, then you’ll get the expected result. Otherwise, you’ll get a <code>NameError</code>. In the above examples, the only name you’ve allowed is <code>sum()</code>. Other names like <code>len()</code> and <code>pow()</code> are not allowed, so the function raises a <code>NameError</code> when you try to use them.</p>
+<p>If you want to completely disallow the use of names, then you can rewrite <code>eval_expression()</code> as follows:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; def eval_expression(input_string):</span><br><span class="line">...     code &#x3D; compile(input_string, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">...     if code.co_names:</span><br><span class="line">...         raise NameError(f&quot;Use of names not allowed&quot;)</span><br><span class="line">...     return eval(code, &#123;&quot;__builtins__&quot;: &#123;&#125;&#125;, &#123;&#125;)</span><br><span class="line">...</span><br><span class="line">&gt;&gt;&gt; eval_expression(&quot;3 + 4 * 5 + 25 &#x2F; 2&quot;)</span><br><span class="line">35.5</span><br><span class="line">&gt;&gt;&gt; eval_expression(&quot;sum([1, 2, 3])&quot;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span><br><span class="line">  File &quot;&lt;stdin&gt;&quot;, line 4, in eval_expression</span><br><span class="line">NameError: Use of names not allowed</span><br></pre></td></tr></table></figure>
+
+<p>Now your function doesn’t allow <em>any</em> names in the input string. To accomplish this, you check for names in <code>.co_names</code> and raise a <code>NameError</code> if one is found. Otherwise, you evaluate <code>input_string</code> and return the result of the evaluation. In this case, you use an empty dictionary to restrict <code>locals</code> as well.</p>
+<p>You can use this technique to minimize the security issues of <code>eval()</code> and strengthen your armor against malicious attacks.</p>
+<h3 id="Restricting-the-Input-to-Only-Literals"><a href="#Restricting-the-Input-to-Only-Literals" class="headerlink" title="Restricting the Input to Only Literals"></a>Restricting the Input to Only Literals</h3><p>A common use case for Python’s <code>eval()</code> is to evaluate strings that contain standard Python literals and turn them into concrete objects.</p>
+<p>The standard library provides a function called <a href="https://docs.python.org/3/library/ast.html#ast.literal_eval" target="_blank" rel="noopener"><code>literal_eval()</code></a> that can help achieve this goal. The function doesn’t support operators, but it does support <a href="https://realpython.com/python-lists-tuples/" target="_blank" rel="noopener">lists, tuples</a>, numbers, strings, and so on:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; from ast import literal_eval</span><br><span class="line">&gt;&gt;&gt; # Evaluating literals</span><br><span class="line">&gt;&gt;&gt; literal_eval(&quot;15.02&quot;)</span><br><span class="line">15.02</span><br><span class="line">&gt;&gt;&gt; literal_eval(&quot;[1, 15]&quot;)</span><br><span class="line">[1, 15]</span><br><span class="line">&gt;&gt;&gt; literal_eval(&quot;(1, 15)&quot;)</span><br><span class="line">(1, 15)</span><br><span class="line">&gt;&gt;&gt; literal_eval(&quot;&#123;&#39;one&#39;: 1, &#39;two&#39;: 2&#125;&quot;)</span><br><span class="line">&#123;&#39;one&#39;: 1, &#39;two&#39;: 2&#125;</span><br><span class="line">&gt;&gt;&gt; # Trying to evaluate an expression</span><br><span class="line">&gt;&gt;&gt; literal_eval(&quot;sum([1, 15]) + 5 + 8 * 2&quot;)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  ...</span><br><span class="line">ValueError: malformed node or string: &lt;_ast.BinOp object at 0x7faedecd7668&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Notice that <code>literal_eval()</code> only works with standard type literals. It doesn’t support the use of operators or names. If you try to feed an expression to <code>literal_eval()</code>, then you’ll get a <code>ValueError</code>. This function can also help you minimize the security risks associated with the use of Python’s <code>eval()</code>.</p>
+<h2 id="Using-Python’s-eval-With-input"><a href="#Using-Python’s-eval-With-input" class="headerlink" title="Using Python’s eval() With input()"></a>Using Python’s <code>eval()</code> With <code>input()</code></h2><p>In <a href="https://realpython.com/products/python-basics-book" target="_blank" rel="noopener">Python 3.x</a>, the built-in <a href="https://docs.python.org/3/library/functions.html#input" target="_blank" rel="noopener"><strong><code>input()</code></strong></a> reads the user input at the command line, converts it to a string, strips the trailing newline, and returns the result to the caller. Since the result of <code>input()</code> is a string, you can feed it to <code>eval()</code> and evaluate it as a Python expression:</p>
+<p>&gt;&gt;&gt;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; eval(input(&quot;Enter a math expression: &quot;))</span><br><span class="line">Enter a math expression: 15 * 2</span><br><span class="line">30</span><br><span class="line">&gt;&gt;&gt; eval(input(&quot;Enter a math expression: &quot;))</span><br><span class="line">Enter a math expression: 5 + 8</span><br><span class="line">13</span><br></pre></td></tr></table></figure>
+
+<p>You can wrap Python’s <code>eval()</code> around <code>input()</code> to automatically evaluate the user’s input. This is a common use case for <code>eval()</code> because it emulates the behavior of <a href="https://docs.python.org/2/library/functions.html#input" target="_blank" rel="noopener"><code>input()</code> in Python 2.x</a>, in which <code>input()</code> evaluates the user’s input as a Python expression and returns the result.</p>
+<p>This behavior of <code>input()</code> in Python 2.x was changed in Python 3.x because of its security implications.</p>
+<h2 id="Building-a-Math-Expressions-Evaluator"><a href="#Building-a-Math-Expressions-Evaluator" class="headerlink" title="Building a Math Expressions Evaluator"></a>Building a Math Expressions Evaluator</h2><p>So far, you’ve learned how Python’s <code>eval()</code> works and how to use it in practice. You’ve also learned that <code>eval()</code> has important security implications and that it’s generally considered good practice to avoid the use of <code>eval()</code> in your code. However, there are some situations in which Python’s <code>eval()</code> can save you a lot of time and effort.</p>
+<p>In this section, you’re going to code an application to evaluate math expressions on the fly. If you wanted to solve this problem without using <code>eval()</code>, then you’d need to go through the following steps:</p>
+<ol>
+<li><strong>Parse</strong> the input expression.</li>
+<li><strong>Change</strong> the expression’s components into Python objects (numbers, operators, functions, and so on).</li>
+<li><strong>Combine</strong> everything into an expression.</li>
+<li><strong>Confirm</strong> that the expression is valid in Python.</li>
+<li><strong>Evaluate</strong> the final expression and return the result.</li>
+</ol>
+<p>That would be a lot of work considering the wide variety of possible expressions that Python can process and evaluate. Fortunately, you can use <code>eval()</code> to solve this problem, and you’ve already learned several techniques to reduce the associated security risks.</p>
+<p>You can get the source code for the application that you’re going to build in this section by clicking on the box below:</p>
+<p><strong>Download the sample code:</strong> <a href="https://realpython.com/bonus/python-eval-project/" target="_blank" rel="noopener">Click here to get the code you’ll use</a> to learn about Python’s eval() in this tutorial.</p>
+<p>First, fire up your favorite code editor. Create a new <a href="https://realpython.com/run-python-scripts/#scripts-vs-modules" target="_blank" rel="noopener">Python script</a> called <code>mathrepl.py</code>, and then add the following code:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"> 1 import math</span><br><span class="line"> 2 </span><br><span class="line"> 3 __version__ &#x3D; &quot;1.0&quot;</span><br><span class="line"> 4 </span><br><span class="line"> 5 ALLOWED_NAMES &#x3D; &#123;</span><br><span class="line"> 6     k: v for k, v in math.__dict__.items() if not k.startswith(&quot;__&quot;)</span><br><span class="line"> 7 &#125;</span><br><span class="line"> 8 </span><br><span class="line"> 9 PS1 &#x3D; &quot;mr&gt;&gt;&quot;</span><br><span class="line">10 </span><br><span class="line">11 WELCOME &#x3D; f&quot;&quot;&quot;</span><br><span class="line">12 MathREPL &#123;__version__&#125;, your Python math expressions evaluator!</span><br><span class="line">13 Enter a valid math expression after the prompt &quot;&#123;PS1&#125;&quot;.</span><br><span class="line">14 Type &quot;help&quot; for more information.</span><br><span class="line">15 Type &quot;quit&quot; or &quot;exit&quot; to exit.</span><br><span class="line">16 &quot;&quot;&quot;</span><br><span class="line">17 </span><br><span class="line">18 USAGE &#x3D; f&quot;&quot;&quot;</span><br><span class="line">19 Usage:</span><br><span class="line">20 Build math expressions using numeric values and operators.</span><br><span class="line">21 Use any of the following functions and constants:</span><br><span class="line">22 </span><br><span class="line">23 &#123;&#39;, &#39;.join(ALLOWED_NAMES.keys())&#125;</span><br><span class="line">24 &quot;&quot;&quot;</span><br></pre></td></tr></table></figure>
+
+<p>In this piece of code, you first import Python’s <code>math</code> module. This module will allow you to perform math operations using predefined functions and constants. The constant <code>ALLOWED_NAMES</code> holds a dictionary containing the non-special names in <code>math</code>. This way, you’ll be able to use them with <code>eval()</code>.</p>
+<p>You also define three more string constants. You’ll use them as the user interface to your script and you’ll print them to the screen as needed.</p>
+<p>Now you’re ready to code the core functionality of your application. In this case, you want to code a function that receives math expressions as input and returns their result. To do this, you write a function called <code>evaluate()</code>:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">26 def evaluate(expression):</span><br><span class="line">27     &quot;&quot;&quot;Evaluate a math expression.&quot;&quot;&quot;</span><br><span class="line">28     # Compile the expression</span><br><span class="line">29     code &#x3D; compile(expression, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">30 </span><br><span class="line">31     # Validate allowed names</span><br><span class="line">32     for name in code.co_names:</span><br><span class="line">33         if name not in ALLOWED_NAMES:</span><br><span class="line">34             raise NameError(f&quot;The use of &#39;&#123;name&#125;&#39; is not allowed&quot;)</span><br><span class="line">35 </span><br><span class="line">36     return eval(code, &#123;&quot;__builtins__&quot;: &#123;&#125;&#125;, ALLOWED_NAMES)</span><br></pre></td></tr></table></figure>
+
+<p>Here’s how the function works:</p>
+<ol>
+<li>In <strong>line <code>26</code></strong>, you define <code>evaluate()</code>. This function takes the string <code>expression</code> as an argument and returns a <a href="https://realpython.com/lessons/floats/" target="_blank" rel="noopener">float</a> that represents the result of evaluating the string as a math expression.</li>
+<li>In <strong>line <code>29</code></strong>, you use <code>compile()</code> to turn the input string <code>expression</code> into compiled Python code. The compiling operation will raise a <code>SyntaxError</code> if the user enters an invalid expression.</li>
+<li>In <strong>line <code>32</code></strong>, you start a <code>for</code> loop to inspect the names contained in <code>expression</code> and confirm that they can be used in the final expression. If the user provides a name that is not in the list of allowed names, then you raise a <code>NameError</code>.</li>
+<li>In <strong>line <code>36</code></strong>, you perform the actual evaluation of the math expression. Notice that you pass custom dictionaries to <code>globals</code> and <code>locals</code> as good practice recommends. <code>ALLOWED_NAMES</code> holds the functions and constants defined in <code>math</code>.</li>
+</ol>
+<p><strong>Note:</strong> Since this application uses the functions defined in <code>math</code>, you need to consider that some of these functions will raise a <code>ValueError</code> when you call them with an invalid input value.</p>
+<p>For example, <code>math.sqrt(-10)</code> would raise an error because the <a href="https://realpython.com/python-square-root-function/" target="_blank" rel="noopener">square root</a> of <code>-10</code> is undefined. Later on, you’ll see how to catch this error in your client code.</p>
+<p>The use of custom values for the <code>globals</code> and <code>locals</code> parameters, along with the check of names in <strong>line <code>33</code></strong>, allows you to minimize the security risks associated with the use of <code>eval()</code>.</p>
+<p>Your math expression evaluator will be finished when you write its client code in <a href="https://realpython.com/python-main-function" target="_blank" rel="noopener"><code>main()</code></a>. In this function, you’ll define the program’s main loop and close the cycle of reading and evaluating the expressions that your user enters in the command line.</p>
+<p>For this example, the application will:</p>
+<ol>
+<li><strong>Print</strong> a welcome message to the user</li>
+<li><strong>Show</strong> a prompt ready to read the user’s input</li>
+<li><strong>Provide</strong> options to get usage instructions and to terminate the application</li>
+<li><strong>Read</strong> the user’s math expression</li>
+<li><strong>Evaluate</strong> the user’s math expression</li>
+<li><strong>Print</strong> the result of the evaluation to the screen</li>
+</ol>
+<p>Check out the following implementation of <code>main()</code>:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">38 def main():</span><br><span class="line">39     &quot;&quot;&quot;Main loop: Read and evaluate user&#39;s input.&quot;&quot;&quot;</span><br><span class="line">40     print(WELCOME)</span><br><span class="line">41     while True:</span><br><span class="line">42         # Read user&#39;s input</span><br><span class="line">43         try:</span><br><span class="line">44             expression &#x3D; input(f&quot;&#123;PS1&#125; &quot;)</span><br><span class="line">45         except (KeyboardInterrupt, EOFError):</span><br><span class="line">46             raise SystemExit()</span><br><span class="line">47 </span><br><span class="line">48         # Handle special commands</span><br><span class="line">49         if expression.lower() &#x3D;&#x3D; &quot;help&quot;:</span><br><span class="line">50             print(USAGE)</span><br><span class="line">51             continue</span><br><span class="line">52         if expression.lower() in &#123;&quot;quit&quot;, &quot;exit&quot;&#125;:</span><br><span class="line">53             raise SystemExit()</span><br><span class="line">54 </span><br><span class="line">55         # Evaluate the expression and handle errors</span><br><span class="line">56         try:</span><br><span class="line">57             result &#x3D; evaluate(expression)</span><br><span class="line">58         except SyntaxError:</span><br><span class="line">59             # If the user enters an invalid expression</span><br><span class="line">60             print(&quot;Invalid input expression syntax&quot;)</span><br><span class="line">61             continue</span><br><span class="line">62         except (NameError, ValueError) as err:</span><br><span class="line">63             # If the user tries to use a name that isn&#39;t allowed</span><br><span class="line">64             # or an invalid value for a given math function</span><br><span class="line">65             print(err)</span><br><span class="line">66             continue</span><br><span class="line">67 </span><br><span class="line">68         # Print the result if no error occurs</span><br><span class="line">69         print(f&quot;The result is: &#123;result&#125;&quot;)</span><br><span class="line">70 </span><br><span class="line">71 if __name__ &#x3D;&#x3D; &quot;__main__&quot;:</span><br><span class="line">72     main()</span><br></pre></td></tr></table></figure>
+
+<p>Inside <code>main()</code>, you first print the <code>WELCOME</code> message. Then you read the user’s input in a <a href="https://docs.python.org/3/reference/compound_stmts.html#the-try-statement" target="_blank" rel="noopener"><code>try</code> statement</a> to catch <code>KeyboardInterrupt</code> and <code>EOFError</code>. If either of these exceptions occur, then you terminate the application.</p>
+<p>If the user enters the <code>help</code> option, then the application shows your <code>USAGE</code> guide. Likewise, if the user enters <code>quit</code> or <code>exit</code>, then the application terminates.</p>
+<p>Finally, you use <code>evaluate()</code> to evaluate the user’s math expression, and then you print the result to the screen. It’s important to note that a call to <code>evaluate()</code> can raise the following exceptions:</p>
+<ul>
+<li><strong><code>SyntaxError</code></strong>: This happens when the user enters an expression that doesn’t follow Python syntax.</li>
+<li><strong><code>NameError</code></strong>: This happens when the user tries to use a name (function, class, or attribute) that isn’t allowed.</li>
+<li><strong><code>ValueError</code></strong>: This happens when the user tries to use a value that isn’t allowed as an input to a given function in <code>math</code>.</li>
+</ul>
+<p>Notice that in <code>main()</code>, you catch all of these exceptions and print messages to the user accordingly. This will allow the user to review the expression, fix the problem, and run the program again.</p>
+<p>That’s it! You’ve built a math expression evaluator in about seventy lines of code using Python’s <code>eval()</code>. To <a href="https://realpython.com/run-python-scripts/" target="_blank" rel="noopener">run the application</a>, open your system’s command line and type the following command:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ python3 mathrepl.py</span><br></pre></td></tr></table></figure>
+
+<p>This command will launch the math expression evaluator’s <a href="https://realpython.com/python-command-line-arguments/#the-command-line-interface" target="_blank" rel="noopener">command-line interface</a> (CLI). You’ll see something like this on your screen:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">MathREPL 1.0, your Python math expressions evaluator!</span><br><span class="line">Enter a valid math expression after the prompt &quot;mr&gt;&gt;&quot;.</span><br><span class="line">Type &quot;help&quot; for more information.</span><br><span class="line">Type &quot;quit&quot; or &quot;exit&quot; to exit.</span><br><span class="line"></span><br><span class="line">mr&gt;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Once you’re there, you can enter and evaluate any math expression. For example, type the following expressions:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mr&gt;&gt; 25 * 2</span><br><span class="line">The result is: 50</span><br><span class="line">mr&gt;&gt; sqrt(25)</span><br><span class="line">The result is: 5.0</span><br><span class="line">mr&gt;&gt; pi</span><br><span class="line">The result is: 3.141592653589793</span><br></pre></td></tr></table></figure>
+
+<p>If you enter a valid math expression, then the application evaluates it and prints the result to your screen. If there are any problems with your expressions, then the application will tell you:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mr&gt;&gt; 5 * (25 + 4</span><br><span class="line">Invalid input expression syntax</span><br><span class="line">mr&gt;&gt; sum([1, 2, 3, 4, 5])</span><br><span class="line">The use of &#39;sum&#39; is not allowed</span><br><span class="line">mr&gt;&gt; sqrt(-15)</span><br><span class="line">math domain error</span><br><span class="line">mr&gt;&gt; factorial(-15)</span><br><span class="line">factorial() not defined for negative values</span><br></pre></td></tr></table></figure>
+
+<p>In the first example, you miss the closing parentheses, so you get a message telling you that the syntax is incorrect. Then you call <code>sum()</code>, which isn’t allowed, and you get an explanatory error message. Finally, you call a <code>math</code> function with an invalid input value, and the application generates a message identifying the problem in your input.</p>
+<p>There you have it—your math expressions evaluator is ready! Feel free to add some extra features. A few ideas to get you started include enlarging the dictionary of allowed names and adding more elaborate warning messages. Give it a shot and let us know in the comments how it goes.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>You can use Python’s <strong><code>eval()</code></strong> to evaluate Python <strong>expressions</strong> from a string-based or code-based input. This built-in function can be useful when you’re trying to evaluate Python expressions on the fly and you want to avoid the hassle of creating your own expressions evaluator from scratch.</p>
+<p>In this tutorial, you’ve learned how <code>eval()</code> works and how to use it safely and effectively to evaluate arbitrary Python expressions.</p>
+<p><strong>You’re now able to:</strong></p>
+<ul>
+<li>Use Python’s <code>eval()</code> to dynamically <strong>evaluate</strong> basic Python expressions</li>
+<li>Run more complex statements like <strong>function calls</strong>, <strong>object creation</strong>, and <strong>attribute access</strong> using <code>eval()</code></li>
+<li>Minimize the <strong>security risks</strong> associated with the use of Python’s <code>eval()</code></li>
+</ul>
+<p>Additionally, you’ve coded an application that uses <code>eval()</code> to interactively evaluate math expressions using a <a href="https://realpython.com/command-line-interfaces-python-argparse/" target="_blank" rel="noopener">command-line interface</a>. You can download the application’s code by clicking on the link below:</p>
+<p><strong>Download the sample code:</strong> <a href="https://realpython.com/bonus/python-eval-project/" target="_blank" rel="noopener">Click here to get the code you’ll use</a> to learn about Python’s eval() in this tutorial.</p>
+</section>
+    <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#python" >
+    <span class="tag-code">python</span>
+  </a>
+
+  <a href="/tags#eval" >
+    <span class="tag-code">eval</span>
+  </a>
+
+      </div>
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/05/12/python-virtual-machine/">
+        <span class="nav-arrow">← </span>
+        
+          Inside The Python Virtual Machine
+        
+      </a>
+    
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Understanding-Python’s-eval"><span class="toc-nav-text">Understanding Python’s eval()</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#The-First-Argument-expression"><span class="toc-nav-text">The First Argument: expression</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#The-Second-Argument-globals"><span class="toc-nav-text">The Second Argument: globals</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#The-Third-Argument-locals"><span class="toc-nav-text">The Third Argument: locals</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Evaluating-Expressions-With-Python’s-eval"><span class="toc-nav-text">Evaluating Expressions With Python’s eval()</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Boolean-Expressions"><span class="toc-nav-text">Boolean Expressions</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Math-Expressions"><span class="toc-nav-text">Math Expressions</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#General-Purpose-Expressions"><span class="toc-nav-text">General-Purpose Expressions</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Minimizing-the-Security-Issues-of-eval"><span class="toc-nav-text">Minimizing the Security Issues of eval()</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Restricting-globals-and-locals"><span class="toc-nav-text">Restricting globals and locals</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Restricting-the-Use-of-Built-In-Names"><span class="toc-nav-text">Restricting the Use of Built-In Names</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Restricting-Names-in-the-Input"><span class="toc-nav-text">Restricting Names in the Input</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Restricting-the-Input-to-Only-Literals"><span class="toc-nav-text">Restricting the Input to Only Literals</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Using-Python’s-eval-With-input"><span class="toc-nav-text">Using Python’s eval() With input()</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Building-a-Math-Expressions-Evaluator"><span class="toc-nav-text">Building a Math Expressions Evaluator</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Conclusion"><span class="toc-nav-text">Conclusion</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://shanyongbo.github.io/2020/05/13/2020-05-13-python-eval-动态计算表达式/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "yanm1ng";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "Python eval() - 动态执行表达式",
+        owner: "yanm1ng",
+        repo: "yanm1ng.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>
