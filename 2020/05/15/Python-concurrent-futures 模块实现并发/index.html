@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="yanm1ng&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      Python concurrent.futures 模块实现并发 | shan
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>shan</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>Python concurrent.futures 模块实现并发</h2>
+  <p class="post-date">2020-05-15</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><p><strong>原文标题</strong>：<a href="https://rednafi.github.io/digressions/python/2020/04/21/python-concurrent-futures.html#references" target="_blank" rel="noopener">Effortless Concurrency with Python’s concurrent.futures</a></p>
+<p>用 Python 编写并发的代码是十分棘手的。你需要担心这些棘手的问题，例如手头上的任务是 I/O 还是 CPU 相关的，或者是否为实现并发性付出额外的努力甚至给你带来所需的提升。此外，全局解释器锁<a href="https://wiki.python.org/moin/GlobalInterpreterLock" target="_blank" rel="noopener">GIL</a>的存在进一步限制了编写真正的并发代码。你可在不出错的前提下，简化相关并发的代码：</p>
+<blockquote>
+<p>在Python中，如果手头的任务是 I/O 相关的，则可以使用标准库的<code>threading</code> 模块，或者如果任务是CPU相关的，则可以使用 <code>multiprocessing</code> 模块。<code>threading</code> 和 <code>multiprocessing</code>  的这些 API 让你在编写并发代码时更加灵活以及容易控制，但代价是必须编写相对详细低级的代码，从而在核心逻辑之上增加了额外的复杂性。有的时候，当目标任务很复杂时，通常不可能在增加并发的同时避免复杂性。但是，可以使许多更简单的任务实现并发，从而不会增加太多额外的开销。</p>
+</blockquote>
+<p>Python 标准库还包含一个名为<code>concurrent.futures</code>的模块。在 Python 3.2 中添加了此模块，用于为开发人员提供启动异步任务的高级接口。它是<code>threading</code> 和 <code>multiprocessing</code> 模块之上的通用抽象层，用于提供使用线程池或进程池时运行任务的接口。当你想同时运行一段代码并且不需要<code>threading</code>和<code>multiprocessing</code> API 公开的附加模块化功能时，这是一个完美的工具。</p>
+<h2 id="Anatomy-of-concurrent-futures"><a href="#Anatomy-of-concurrent-futures" class="headerlink" title="Anatomy of concurrent.futures"></a>Anatomy of concurrent.futures</h2><p>下面是官方文档中的内容：</p>
+<blockquote>
+<p><a href="https://docs.python.org/zh-cn/3/library/concurrent.futures.html#module-concurrent.futures" target="_blank" rel="noopener"><code>concurrent.futures</code></a> 模块提供异步执行回调高层接口。</p>
+</blockquote>
+<p>这意味着你可以通过公共高级接口使用线程或进程异步运行子例程。基本上，该模块提供了一个名为 <code>Executor</code> 的抽象类。你无法直接实例化它，而是需要使用它提供的两个子类之一来运行任务。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Executor (抽象基类)</span><br><span class="line">│</span><br><span class="line">├── ThreadPoolExecutor</span><br><span class="line">│</span><br><span class="line">│   │Executor 类的一个具体子类</span><br><span class="line">│   │用于通过底层的线程管理与 I&#x2F;O 相关的任务</span><br><span class="line">│</span><br><span class="line">├── ProcessPoolExecutor</span><br><span class="line">│</span><br><span class="line">│   │Executor 类的一个具体子类</span><br><span class="line">│   │用于通过底层的进程管理与 CPU 相关的任务</span><br></pre></td></tr></table></figure>
+
+<p>在内部，这两个类与 pools 交互并管理 worker。 <code>future</code> 用于管理 worker 计算的结果。要使用一组 workers ，应用程序需要创建适当的 <code>executor</code> 类的实例，然后提交它们使其运行。当每个任务启动时，将返回一个 <code>Future</code> 实例。当需要任务的结果时，应用程序可以使用 <code>Future</code> 对象进行阻塞，直到结果可以获得为止。这个模块提供了各种 API，以方便等待任务的完成，因此不需要直接管理<code>Future</code>对象。</p>
+<h2 id="Executor-Objects"><a href="#Executor-Objects" class="headerlink" title="Executor Objects"></a>Executor Objects</h2><p>由于 <code>ThreadPoolExecutor</code> 和 <code>ProcessPoolExecutor</code> 具有相同的API接口，因此在这种情况下，我们主要讨论它们提供的两种方法。下面的描述来自官方文档。</p>
+<h3 id="submit-fn-args-kwargs"><a href="#submit-fn-args-kwargs" class="headerlink" title="submit(fn, args, *kwargs)"></a>submit(fn, <em>args, *</em>kwargs)</h3><p>调度可调用对象 fn 以 fn(<em>args, *</em>kwargs) 来运行，并返回表示可调用对象执行的 <code>Future</code> 对象。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> ThreadPoolExecutor(max_workers=<span class="number">1</span>) <span class="keyword">as</span> executor:</span><br><span class="line">    future = executor.submit(pow, <span class="number">323</span>, <span class="number">1235</span>)</span><br><span class="line">    print(future.result())</span><br></pre></td></tr></table></figure>
+
+<h3 id="map-func-iterables-timeout-None-chunksize-1"><a href="#map-func-iterables-timeout-None-chunksize-1" class="headerlink" title="map(func, *iterables, timeout=None, chunksize=1)"></a>map(func, *iterables, timeout=None, chunksize=1)</h3><p>与<code>map(func, *iterables)</code>类似，除了：</p>
+<ul>
+<li><p>可迭代对象是立即收集的，而不是延迟收集的； </p>
+</li>
+<li><p>func 是异步执行的，并且可以同时进行对 func 的多次调用。</p>
+<p>如果调用了<code>__next __()</code>，并且在最初调用 <code>Executor.map()</code> 的超时后结果不可用，则返回的迭代器引发了一个 <code>concurrent.futures.TimeoutError</code>。超时可以是 <code>int</code> 或 <code>float</code> 。如果未指定超时或者是 <code>None</code>，则等待时间没有限制。如果 func 调用引发异常，则从迭代器中检索其值时将引发该异常。</p>
+<p>当使用<code>ProcessPoolExecutor</code>时，此方法将可迭代项分为许多块，并作为单独的任务提交给 <code>pool</code>。这些块的大小可以通过将 <code>chunksize</code> 设置为正整数来指定。对于非常长的可迭代对象，与默认大小为1相比，将 <code>chunksize</code> 设置为较大的值可以显著的提高性能。对于<code>ThreadPoolExecutor</code>，<code>chunksize</code>是无效的。</p>
+</li>
+</ul>
+<h2 id="Generic-Workflows-for-Running-Tasks-Concurrently"><a href="#Generic-Workflows-for-Running-Tasks-Concurrently" class="headerlink" title="Generic Workflows for Running Tasks Concurrently"></a>Generic Workflows for Running Tasks Concurrently</h2><p>我们大部分脚本都包含下面这样的变量：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> task <span class="keyword">in</span> get_tasks():</span><br><span class="line">    perform(task)</span><br></pre></td></tr></table></figure>
+
+<p>这里，<code>get_tasks</code> 返回了一个可迭代对象，它包含了目标任务或者参数，在该任务或参数上需要应用特定的函数。任务通常会阻塞可调用对象，并且按照顺序执行，且一次只能运行一个任务。因为其顺序执行流程，所以这个逻辑是易于推理的。当任务数量少或单个任务的执行时间要求和复杂性较低时，这没什么问题。但是，当任务数量巨大或单个任务很耗时的时候，就可能很快失去控制。</p>
+<p>一般的经验法则是，当任务主要是 I/O 相关时使用 <code>ThreadPoolExecutor</code>，例如：向多个 url 发送 http 请求，将大量文件保存到磁盘等。但当主要执行的任务是 CPU 相关时，应使用 <code>ProcessPoolExecutor</code>。它进行大量密集的计算，对大量图像应用预处理方法，一次处理多个文本文件等。</p>
+<h3 id="Running-Tasks-with-Executor-submit"><a href="#Running-Tasks-with-Executor-submit" class="headerlink" title="Running Tasks with Executor.submit"></a>Running Tasks with Executor.submit</h3><p>当你有大量的任务，你可以一次性排列它们然后等待这些任务的完成，之后你就可以收集这些任务的结果。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> concurrent.futures</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> concurrent.futures.Executor() <span class="keyword">as</span> executor:</span><br><span class="line">    futures = &#123;executor.submit(perform, task) <span class="keyword">for</span> task <span class="keyword">in</span> get_tasks()&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> fut <span class="keyword">in</span> concurrent.futures.as_completed(futures):</span><br><span class="line">        print(<span class="string">f"The outcome is <span class="subst">&#123;fut.result()&#125;</span>"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>在这里，需要首先创建一个 Executor，该 Executor 在单独的进程或线程中管理所有正在运行的任务。使用 with 语句会创建一个上下文管理器，以确保在完成后通过隐式调用 <code>executor.shutdown()</code> 方法来清理所有杂散线程或进程。</p>
+<p>在实际代码中，你需要根据可调用对象的性质，将 <code>Executor</code> 替换为 <code>ThreadPoolExecutor</code> 或 <code>ProcessPoolExecutor</code> 。然后，在集合推导式中开始所有任务。<code>executor.submit()</code> 方法管理每个任务。它会创建一个 <code>Future</code> 对象，该对象代表要完成的任务。排列好所有任务后，会调用方法<code>concurrent.futures_as_completed()</code>，该方法会在完成任务时产生 furtures 对象。 <code>executor.result()</code> 方法提供 <code>perform(task)</code> 的返回值，或者在失败的情况下引发异常。</p>
+<p><code>executor.submit()</code> 方法异步安排任务，并且不包含任何与原始任务有关的上下文。因此，如果你想用原始任务映射结果，则需要自己跟踪这些任务。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> concurrent.futures</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> concurrent.futures.Executor() <span class="keyword">as</span> executor:</span><br><span class="line">    futures = &#123;executor.submit(perform, task): task <span class="keyword">for</span> task <span class="keyword">in</span> get_tasks()&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> fut <span class="keyword">in</span> concurrent.futures.as_completed(futures):</span><br><span class="line">        original_task = futures[fut]</span><br><span class="line">        print(<span class="string">f"The result of <span class="subst">&#123;original_task&#125;</span> is <span class="subst">&#123;fut.result()&#125;</span>"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>注意变量 <code>futures</code>，其中原始任务使用字典映射到其相应的 futures 。</p>
+<h3 id="Running-Tasks-with-Executor-map"><a href="#Running-Tasks-with-Executor-map" class="headerlink" title="Running Tasks with Executor.map"></a>Running Tasks with Executor.map</h3><p>可以按照预定的顺序收集结果的另一种方法是使用<code>execuror.map()</code> 方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> concurrent.futures</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> concurrent.futures.Executor() <span class="keyword">as</span> executor:</span><br><span class="line">    <span class="keyword">for</span> arg, res <span class="keyword">in</span> zip(get_tasks(), executor.map(perform, get_tasks())):</span><br><span class="line">        print(<span class="string">f"The result of <span class="subst">&#123;arg&#125;</span> is <span class="subst">&#123;res&#125;</span>"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>注意map函数如何一次获取整个可迭代对象。它会立即而不是按照预定的顺序懒惰地返回结果。如果在操作过程中发生任何未处理的异常，也会立即引发该异常，并且执行不会继续进行。</p>
+<p>在Python 3.5+ 中，<code>executor.map()</code>接收一个可选参数：<code>chunksize</code>。使用<code>ProcessPoolExecutor</code>时，在很长的可迭代中，与默认大小 1 相比，使用较大的 chunksize 值可以显著提高性能。使用<code>ThreadPoolExecutor</code>时，chunksize 无效。</p>
+<h2 id="A-Few-Real-World-Examples"><a href="#A-Few-Real-World-Examples" class="headerlink" title="A Few Real World Examples"></a>A Few Real World Examples</h2><p>在继续理解接下来的例子之前，让我们写一个小的<a href="https://www.python.org/dev/peps/pep-0318/" target="_blank" rel="noopener">decorator</a>，它将有助于测量和比较并发和顺序代码之间的执行时间。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> functools <span class="keyword">import</span> wraps</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">timeit</span><span class="params">(method)</span>:</span></span><br><span class="line"><span class="meta">    @wraps(method)</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">wrapper</span><span class="params">(*args, **kwargs)</span>:</span></span><br><span class="line">        start_time = time.time()</span><br><span class="line">        result = method(*args, **kwargs)</span><br><span class="line">        end_time = time.time()</span><br><span class="line">        print(<span class="string">f"<span class="subst">&#123;method.__name__&#125;</span> =&gt; <span class="subst">&#123;(end_time-start_time)*<span class="number">1000</span>&#125;</span> ms"</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    <span class="keyword">return</span> wrapper</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">(n)</span>:</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> list(range(n))</span><br></pre></td></tr></table></figure>
+
+<p>这会打印出方法的名称以及执行它所花费的时间。</p>
+<h3 id="Download-amp-Save-Files-from-URLs-with-Multi-threading"><a href="#Download-amp-Save-Files-from-URLs-with-Multi-threading" class="headerlink" title="Download &amp; Save Files from URLs with Multi-threading"></a>Download &amp; Save Files from URLs with Multi-threading</h3><p>首先，让我们从大量网址中下载一些 pdf 文件，然后将其保存到磁盘中。大概这是一个 I/O 相关的任务，我们将使用<code>ThreadPoolExecutor</code>类进行操作。但在此之前，让我们先按顺序进行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"><span class="keyword">import</span> urllib.request</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_one</span><span class="params">(url)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Downloads the specified URL and saves it to disk</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    req = urllib.request.urlopen(url)</span><br><span class="line">    fullpath = Path(url)</span><br><span class="line">    fname = fullpath.name</span><br><span class="line">    ext = fullpath.suffix</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ext:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">"URL does not contain an extension"</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> open(fname, <span class="string">"wb"</span>) <span class="keyword">as</span> handle:</span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            chunk = req.read(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> chunk:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            handle.write(chunk)</span><br><span class="line"></span><br><span class="line">    msg = <span class="string">f"Finished downloading <span class="subst">&#123;fname&#125;</span>"</span></span><br><span class="line">    <span class="keyword">return</span> msg</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_all</span><span class="params">(urls)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> [download_one(url) <span class="keyword">for</span> url <span class="keyword">in</span> urls]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    urls = (</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040a.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040ez.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040es.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040sb.pdf"</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    results = download_all(urls)</span><br><span class="line">    <span class="keyword">for</span> result <span class="keyword">in</span> results:</span><br><span class="line">        print(result)</span><br><span class="line">&gt;&gt;&gt; download_all =&gt; 22850.6863117218 ms</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040a.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040ez.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040es.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040sb.pdf</span><br></pre></td></tr></table></figure>
+
+<p>在上面的代码片段中，我主要定义了两个函数。 <code>download_one</code> 函数从给定的 URL 下载 pdf 文件并将其保存到磁盘。它检查 URL 中的文件是否具有扩展名，如果没有扩展名，则引发 <code>RunTimeError</code> 。如果在文件名中找到扩展名，它将逐块下载文件并将其保存到磁盘。第二个函数 <code>download_all</code> 只是遍历一系列 URL，并对每个 URL应用 <code>download_one</code> 函数。顺序代码大约需要22.8秒才能运行完成。现在，让我们看看相同代码的线程版本的性能如何。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"><span class="keyword">import</span> urllib.request</span><br><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ThreadPoolExecutor, as_completed</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_one</span><span class="params">(url)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Downloads the specified URL and saves it to disk</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    req = urllib.request.urlopen(url)</span><br><span class="line">    fullpath = Path(url)</span><br><span class="line">    fname = fullpath.name</span><br><span class="line">    ext = fullpath.suffix</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ext:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">"URL does not contain an extension"</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> open(fname, <span class="string">"wb"</span>) <span class="keyword">as</span> handle:</span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            chunk = req.read(<span class="number">1024</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> chunk:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            handle.write(chunk)</span><br><span class="line"></span><br><span class="line">    msg = <span class="string">f"Finished downloading <span class="subst">&#123;fname&#125;</span>"</span></span><br><span class="line">    <span class="keyword">return</span> msg</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_all</span><span class="params">(urls)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Create a thread pool and download specified urls</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> ThreadPoolExecutor(max_workers=<span class="number">13</span>) <span class="keyword">as</span> executor:</span><br><span class="line">        <span class="keyword">return</span> executor.map(download_one, urls, timeout=<span class="number">60</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    urls = (</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040a.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040ez.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040es.pdf"</span>,</span><br><span class="line">        <span class="string">"http://www.irs.gov/pub/irs-pdf/f1040sb.pdf"</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    results = download_all(urls)</span><br><span class="line">    <span class="keyword">for</span> result <span class="keyword">in</span> results:</span><br><span class="line">        print(result)</span><br><span class="line">&gt;&gt;&gt; download_all =&gt; 5042.651653289795 ms</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040a.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040ez.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040es.pdf</span><br><span class="line"><span class="meta">... </span>Finished downloading f1040sb.pdf</span><br></pre></td></tr></table></figure>
+
+<p>并发版本的代码只需要顺序代码的 1/4 左右。注意，在该并发版本中，<code>download_one</code> 函数与以前的功能相同，但在 <code>download_all</code> 函数中，<code>ThreadPoolExecutor</code> 上下文管理器包装了 <code>execute.map()</code> 方法。函数<code>download_one</code> 和包含 URL 的可迭代项一起传递到 map 中。 timeout 参数确定线程在放弃管道中的单个任务之前将花费多长时间。 <code>max_workers</code> 表示要部署多少个工作器以生成和管理线程。一般的经验法则是使用 <code>2 * multiprocessing.cpu_count() + 1</code>。我的机器有 6 个物理核心和 12 个线程。所以 13 是我选择的值。</p>
+<blockquote>
+<p>Note: You can also try running the above functions with <code>ProcessPoolExecutor</code> via the same interface and notice that the threaded version performs slightly better than due to the nature of the task.</p>
+</blockquote>
+<h3 id="Running-Multiple-CPU-Bound-Subroutines-with-Multi-processing"><a href="#Running-Multiple-CPU-Bound-Subroutines-with-Multi-processing" class="headerlink" title="Running Multiple CPU Bound Subroutines with Multi-processing"></a>Running Multiple CPU Bound Subroutines with Multi-processing</h3><p>以下示例显示了 CPU 相关的哈希函数。主要函数将按顺序多次运行计算密集型哈希算法。然后，另一个函数将再次多次运行主要功能。让我们先按顺序运行该功能。</p>
+<p>The following example shows a CPU bound hashing function. The primary function will sequentially run a compute intensive hash algorithm multiple times. Then another function will again run the primary function multiple times. Let’s run the function sequentially first.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hash_one</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="string">"""A somewhat CPU-intensive task."""</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, n):</span><br><span class="line">        hashlib.pbkdf2_hmac(<span class="string">"sha256"</span>, <span class="string">b"password"</span>, <span class="string">b"salt"</span>, i * <span class="number">10000</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">"done"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hash_all</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="string">"""Function that does hashing in serial."""</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(n):</span><br><span class="line">        hsh = hash_one(n)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">"done"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    hash_all(<span class="number">20</span>)</span><br><span class="line">&gt;&gt;&gt; hash_all =&gt; 18317.330598831177 ms</span><br></pre></td></tr></table></figure>
+
+<p>如果分析 <code>hash_one</code> 和 <code>hash_all</code> 函数，可以看到它们实际上正在运行两个计算密集型嵌套 <code>for</code> 循环。上面的代码大约需要 18 秒才能在顺序模式下运行完成。现在，使用 <code>ProcessPoolExecutor</code> 并行运行它。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ProcessPoolExecutor, ThreadPoolExecutor</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hash_one</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="string">"""A somewhat CPU-intensive task."""</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, n):</span><br><span class="line">        hashlib.pbkdf2_hmac(<span class="string">"sha256"</span>, <span class="string">b"password"</span>, <span class="string">b"salt"</span>, i * <span class="number">10000</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">"done"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hash_all</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="string">"""Function that does hashing in serial."""</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> ProcessPoolExecutor(max_workers=<span class="number">10</span>) <span class="keyword">as</span> executor:</span><br><span class="line">        <span class="keyword">for</span> arg, res <span class="keyword">in</span> zip(range(n), executor.map(hash_one, range(n), chunksize=<span class="number">2</span>)):</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">"done"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    hash_all(<span class="number">20</span>)</span><br><span class="line">&gt;&gt;&gt; hash_all =&gt; 1673.842430114746 ms</span><br></pre></td></tr></table></figure>
+
+<p>如果仔细观察，即使在并发版本中，<code>hash_one</code>函数中的<code>for</code>循环也会按顺序运行。但是，<code>hash_all</code>函数中的另一个<code>for</code>循环是通过多进程执行的。在这里，我使用了10个工作进程，块大小为 2。调整了工作进程数和块大小以实现最佳性能。如你所见，上述 CPU 密集型操作的并发版本比其顺序对应版本快 11 倍。</p>
+<h2 id="Avoiding-Concurrency-Pitfalls"><a href="#Avoiding-Concurrency-Pitfalls" class="headerlink" title="Avoiding Concurrency Pitfalls"></a>Avoiding Concurrency Pitfalls</h2><p>由于<code>current.futures</code>提供了这样一个简单的 API，因此你可能会想将并发应用于手头的每个简单任务。但是，这不是一个好主意。首先，简单性具有一定的约束条件。这样，你可以将并发仅应用于最简单的任务，通常将函数映射到可迭代的对象或同时运行一些子例程。如果手头的任务需要排队，从多个进程中产生多个线程，那么你仍然需要诉诸较低级别的线程和多处理模块。</p>
+<p>使用并发的另一个陷阱是使用<code>ThreadPoolExecutor</code>时可能发生的死锁情况。当与<code>Future</code>相关联的可调用对象等待另一个<code>Future</code>的结果时，它们可能永远不会释放对线程的控制并导致死锁。让我们看一下官方文档中的一个稍作修改的示例。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ThreadPoolExecutor</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">wait_on_b</span><span class="params">()</span>:</span></span><br><span class="line">    time.sleep(<span class="number">5</span>)</span><br><span class="line">    print(b.result())  <span class="comment"># b will never complete because it is waiting on a.</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">5</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">wait_on_a</span><span class="params">()</span>:</span></span><br><span class="line">    time.sleep(<span class="number">5</span>)</span><br><span class="line">    print(a.result())  <span class="comment"># a will never complete because it is waiting on b.</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">6</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> ThreadPoolExecutor(max_workers=<span class="number">2</span>) <span class="keyword">as</span> executor:</span><br><span class="line">    <span class="comment"># here, the future from a depends on the future from b</span></span><br><span class="line">    <span class="comment"># and vice versa</span></span><br><span class="line">    <span class="comment"># so this is never going to be completed</span></span><br><span class="line">    a = executor.submit(wait_on_b)</span><br><span class="line">    b = executor.submit(wait_on_a)</span><br><span class="line"></span><br><span class="line">    print(<span class="string">"Result from wait_on_b"</span>, a.result())</span><br><span class="line">    print(<span class="string">"Result from wait_on_a"</span>, b.result())</span><br></pre></td></tr></table></figure>
+
+<p>在上面的示例中，函数 <code>wait_on_b</code> 取决于函数 <code>wait_on_a</code> 的结果（<code>Future</code> 对象的结果），同时，后一个函数的结果取决于前一个函数的结果。因此，上下文管理器中的代码块由于相互依赖而永远不会执行。这会造成死锁情况。让我们解释一下官方文档中的另一种死锁情况。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ThreadPoolExecutor</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">wait_on_future</span><span class="params">()</span>:</span></span><br><span class="line">    f = executor.submit(pow, <span class="number">5</span>, <span class="number">2</span>)</span><br><span class="line">    <span class="comment"># This will never complete because there is only one worker thread and</span></span><br><span class="line">    <span class="comment"># it is executing this function.</span></span><br><span class="line">    print(f.result())</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> ThreadPoolExecutor(max_workers=<span class="number">1</span>) <span class="keyword">as</span> executor:</span><br><span class="line">    future = executor.submit(wait_on_future)</span><br><span class="line">    print(future.result())</span><br></pre></td></tr></table></figure>
+
+<p>当子例程生成嵌套的 <code>Future</code> 对象并在单个线程上运行时，通常会发生上述情况。在函数 <code>wait_on_future</code>中，<code>executor.submit(pow, 5, 2)</code>创建了另一个Future对象。由于我是使用单个线程运行整个过程，因此内部的 <code>future</code> 对象将阻塞该线程，并且上下文管理器中的外部 <code>executor.submit()</code> 方法不能使用任何线程。使用多进程可以避免这种情况，但是总的来说，这本身就是一个糟糕的设计。</p>
+<p>在某些情况下，并发代码的性能可能会比顺序代码低。发生这种情况可能有多种原因。 </p>
+<ol>
+<li>使用线程来执行与 CPU 相关的任务</li>
+<li>使用多进程来执行与 I/O 相关的任务</li>
+<li>这些任务太琐碎，无法使用线程或多个进程来证明其合理性。</li>
+</ol>
+<p>生成和销毁多个线程或进程带来了额外的开销。通常，线程比生成和销毁的进程快得多。但是，使用错误的并发类型实际上会减慢你的代码速度，而不会其提高性能。下面是一个简单的示例，其中 <code>ThreadPoolExecutor</code> 和<code>ProcessPoolExecutor</code> 的性能均比其顺序对应的性能差。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line">PRIMES = [num <span class="keyword">for</span> num <span class="keyword">in</span> range(<span class="number">19000</span>, <span class="number">20000</span>)]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">is_prime</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">if</span> n % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    sqrt_n = int(math.floor(math.sqrt(n)))</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>, sqrt_n + <span class="number">1</span>, <span class="number">2</span>):</span><br><span class="line">        <span class="keyword">if</span> n % i == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">for</span> number <span class="keyword">in</span> PRIMES:</span><br><span class="line">        print(<span class="string">f"<span class="subst">&#123;number&#125;</span> is prime: <span class="subst">&#123;is_prime(number)&#125;</span>"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    main()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">19088</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span><span class="number">19089</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span><span class="number">19090</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span>...</span><br><span class="line">... main =&gt; 67.65174865722656 ms</span><br></pre></td></tr></table></figure>
+
+<p>上面的示例验证列表中的数字是否为质数。我们对1000个数字运行了该函数，以确定它们是否为质数。顺序版本大约需要67毫秒来完成此操作。但是，请看下面的相同代码的线程版本所花费的时间（140毫秒）需要翻倍，才能完成相同的任务。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ProcessPoolExecutor, ThreadPoolExecutor</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line">num_list = [num <span class="keyword">for</span> num <span class="keyword">in</span> range(<span class="number">19000</span>, <span class="number">20000</span>)]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">is_prime</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">if</span> n % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    sqrt_n = int(math.floor(math.sqrt(n)))</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>, sqrt_n + <span class="number">1</span>, <span class="number">2</span>):</span><br><span class="line">        <span class="keyword">if</span> n % i == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">with</span> ThreadPoolExecutor(max_workers=<span class="number">13</span>) <span class="keyword">as</span> executor:</span><br><span class="line">        <span class="keyword">for</span> number, prime <span class="keyword">in</span> zip(PRIMES, executor.map(is_prime, num_list)):</span><br><span class="line">            print(<span class="string">f"<span class="subst">&#123;number&#125;</span> is prime: <span class="subst">&#123;prime&#125;</span>"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    main()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">19088</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span><span class="number">19089</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span><span class="number">19090</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span>...</span><br><span class="line">... main =&gt; 140.17250061035156 ms</span><br></pre></td></tr></table></figure>
+
+<p>相同代码的多进程版本甚至更慢。这些任务并不能证明要打开这么多进程。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ProcessPoolExecutor</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line">num_list = [num <span class="keyword">for</span> num <span class="keyword">in</span> range(<span class="number">19000</span>, <span class="number">20000</span>)]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">is_prime</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">if</span> n % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    sqrt_n = int(math.floor(math.sqrt(n)))</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>, sqrt_n + <span class="number">1</span>, <span class="number">2</span>):</span><br><span class="line">        <span class="keyword">if</span> n % i == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@timeit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">with</span> ProcessPoolExecutor(max_workers=<span class="number">13</span>) <span class="keyword">as</span> executor:</span><br><span class="line">        <span class="keyword">for</span> number, prime <span class="keyword">in</span> zip(PRIMES, executor.map(is_prime, num_list)):</span><br><span class="line">            print(<span class="string">f"<span class="subst">&#123;number&#125;</span> is prime: <span class="subst">&#123;prime&#125;</span>"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    main()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">19088</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span><span class="number">19089</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span><span class="number">19090</span> <span class="keyword">is</span> prime: <span class="literal">False</span></span><br><span class="line"><span class="meta">... </span>...</span><br><span class="line">... main =&gt; 311.3126754760742 ms</span><br></pre></td></tr></table></figure>
+
+<p>尽管从直观上看，检查质数的任务似乎应该是 CPU 相关的操作，但确定任务本身的计算量是否足以证明产生多个线程或进程的合理性也很重要。否则，你可能会得到比简单解决方案性能更差的复杂代码。</p>
+<h2 id="Remarks"><a href="#Remarks" class="headerlink" title="Remarks"></a>Remarks</h2><p>All the pieces of codes in the blog were written and tested with python 3.8 on a machine running Ubuntu 18.04.</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ol>
+<li><a href="https://docs.python.org/3/library/concurrent.futures.html" target="_blank" rel="noopener">concurrent.fututures- the official documentation</a></li>
+<li><a href="http://pljung.de/posts/easy-concurrency-in-python/" target="_blank" rel="noopener">Easy Concurrency in Python</a></li>
+<li><a href="https://alexwlchan.net/2019/10/adventures-with-concurrent-futures/" target="_blank" rel="noopener">Adventures in Python with concurrent.futures</a></li>
+</ol>
+</section>
+    <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#python" >
+    <span class="tag-code">python</span>
+  </a>
+
+  <a href="/tags#concurrent" >
+    <span class="tag-code">concurrent</span>
+  </a>
+
+      </div>
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/05/13/2020-05-13-python-eval-%E5%8A%A8%E6%80%81%E8%AE%A1%E7%AE%97%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+        <span class="nav-arrow">← </span>
+        
+          Python eval() - 动态执行表达式
+        
+      </a>
+    
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Anatomy-of-concurrent-futures"><span class="toc-nav-text">Anatomy of concurrent.futures</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Executor-Objects"><span class="toc-nav-text">Executor Objects</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#submit-fn-args-kwargs"><span class="toc-nav-text">submit(fn, args, *kwargs)</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#map-func-iterables-timeout-None-chunksize-1"><span class="toc-nav-text">map(func, *iterables, timeout&#x3D;None, chunksize&#x3D;1)</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Generic-Workflows-for-Running-Tasks-Concurrently"><span class="toc-nav-text">Generic Workflows for Running Tasks Concurrently</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Running-Tasks-with-Executor-submit"><span class="toc-nav-text">Running Tasks with Executor.submit</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Running-Tasks-with-Executor-map"><span class="toc-nav-text">Running Tasks with Executor.map</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#A-Few-Real-World-Examples"><span class="toc-nav-text">A Few Real World Examples</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Download-amp-Save-Files-from-URLs-with-Multi-threading"><span class="toc-nav-text">Download &amp; Save Files from URLs with Multi-threading</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Running-Multiple-CPU-Bound-Subroutines-with-Multi-processing"><span class="toc-nav-text">Running Multiple CPU Bound Subroutines with Multi-processing</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Avoiding-Concurrency-Pitfalls"><span class="toc-nav-text">Avoiding Concurrency Pitfalls</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Remarks"><span class="toc-nav-text">Remarks</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#References"><span class="toc-nav-text">References</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://shanyongbo.github.io/2020/05/15/Python-concurrent-futures 模块实现并发/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "yanm1ng";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "Python concurrent.futures 模块实现并发",
+        owner: "yanm1ng",
+        repo: "yanm1ng.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>
