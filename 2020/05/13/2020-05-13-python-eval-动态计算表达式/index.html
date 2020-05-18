@@ -376,139 +376,75 @@
 
 <p>你可以将 Python 的 <code>eval()</code> 包裹在 <code>input()</code> 之上，以自动执行用户的输入。这是 <code>eval()</code> 的常见用例，因为它模拟了 Python 2.x 中<a href="https://docs.python.org/2/library/functions.html#input" target="_blank" rel="noopener"><code>input()</code>的行为</a>，其中，<code>input()</code> 将用户的输入执行为 Python 表达式并返回结果。</p>
 <p>由于其安全性，Python 2.x 中的 <code>input()</code> 行为已在 Python 3.x 中更改。</p>
-<h2 id="Building-a-Math-Expressions-Evaluator"><a href="#Building-a-Math-Expressions-Evaluator" class="headerlink" title="Building a Math Expressions Evaluator"></a>Building a Math Expressions Evaluator</h2><p>到目前为止，你已经了解了 Python 的 <code>eval()</code> 的工作原理以及如何在实践中使用它。你还了解到 <code>eval()</code> 具有重要的安全意义，并且通常被认为是避免在代码中使用 <code>eval()</code> 的良好实践。但是，在某些情况下，Python的 <code>eval()</code> 可以为你节省大量时间和精力。</p>
-<p>在本部分中，你将编写应用程序代码以动态评估数学表达式。如果你想在不使用 <code>eval()</code> 的情况下解决此问题，则需要执行以下步骤：</p>
+<h2 id="Building-a-Math-Expressions-Evaluator"><a href="#Building-a-Math-Expressions-Evaluator" class="headerlink" title="Building a Math Expressions Evaluator"></a>Building a Math Expressions Evaluator</h2><p>到目前为止，你已经了解了 Python 的 <code>eval()</code> 的工作原理以及如何在实践中使用它。你还了解到 <code>eval()</code> 具有重要的安全隐患，并且通常被认为要避免在代码中使用 <code>eval()</code> 。但是，在某些情况下，Python的 <code>eval()</code> 可以为你节省大量时间和精力。</p>
+<p>在本部分中，你会编写代码以动态执行数学表达式。如果你想在不使用 <code>eval()</code> 的情况下解决此问题，则需要执行以下步骤：</p>
 <ol>
-<li>解析输入表达式。</li>
-<li>将表达式的组件更改为Python对象(数字，运算符，函数等)。</li>
-<li>将所有内容组合成一个表达式。</li>
-<li>确认该表达式在Python中有效。</li>
-<li>评估最终表达式并返回结果。</li>
+<li><strong>解析</strong>输入表达式。</li>
+<li>将表达式的组件<strong>更改</strong>为Python对象(数字，运算符，函数等)。</li>
+<li>将所有内容<strong>组合</strong>成一个表达式。</li>
+<li><strong>确认</strong>该表达式在Python中有效。</li>
+<li><strong>执行</strong>最终表达式并返回结果。</li>
 </ol>
-<p>考虑到Python可以处理和执行的各种可能的表达式，这将是很多工作。幸运的是，你可以使用 <code>eval()</code> 解决此问题，并且你已经学习了几种降低相关安全风险的技术。通过单击下面的框，你可以获取将在本节中构建的应用程序的源代码：</p>
-<p>下载示例代码：单击此处以获取用于在此了解Python的 <code>eval()</code> 的代码。教程。</p>
-<p>首先，启动你喜欢的代码编辑器。创建一个名为 <code>mathrepl.py</code> 的新Python脚本，然后添加以下代码：</p>
-<p>So far, you’ve learned how Python’s <code>eval()</code> works and how to use it in practice. You’ve also learned that <code>eval()</code> has important security implications and that it’s generally considered good practice to avoid the use of <code>eval()</code> in your code. However, there are some situations in which Python’s <code>eval()</code> can save you a lot of time and effort.</p>
-<p>In this section, you’re going to code an application to evaluate math expressions on the fly. If you wanted to solve this problem without using <code>eval()</code>, then you’d need to go through the following steps:</p>
-<ol>
-<li><strong>Parse</strong> the input expression.</li>
-<li><strong>Change</strong> the expression’s components into Python objects (numbers, operators, functions, and so on).</li>
-<li><strong>Combine</strong> everything into an expression.</li>
-<li><strong>Confirm</strong> that the expression is valid in Python.</li>
-<li><strong>Evaluate</strong> the final expression and return the result.</li>
-</ol>
-<p>That would be a lot of work considering the wide variety of possible expressions that Python can process and evaluate. Fortunately, you can use <code>eval()</code> to solve this problem, and you’ve already learned several techniques to reduce the associated security risks.</p>
-<p>You can get the source code for the application that you’re going to build in this section by clicking on the box below:</p>
-<p><strong>Download the sample code:</strong> <a href="https://realpython.com/bonus/python-eval-project/" target="_blank" rel="noopener">Click here to get the code you’ll use</a> to learn about Python’s eval() in this tutorial.</p>
-<p>First, fire up your favorite code editor. Create a new <a href="https://realpython.com/run-python-scripts/#scripts-vs-modules" target="_blank" rel="noopener">Python script</a> called <code>mathrepl.py</code>, and then add the following code:</p>
+<p>考虑到Python可以处理和执行的各种可能的表达式，这会花费大量的时间。幸运的是，你可以使用 <code>eval()</code> 解决此问题，并且你已经学习了几种降低相关安全风险的方法。</p>
+<p>首先，创建一个名为 <code>mathrepl.py</code> 的 Python 脚本，然后添加以下代码：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">1</span> <span class="keyword">import</span> math</span><br><span class="line"> <span class="number">2</span> </span><br><span class="line"> <span class="number">3</span> __version__ = <span class="string">"1.0"</span></span><br><span class="line"> <span class="number">4</span> </span><br><span class="line"> <span class="number">5</span> ALLOWED_NAMES = &#123;</span><br><span class="line"> <span class="number">6</span>     k: v <span class="keyword">for</span> k, v <span class="keyword">in</span> math.__dict__.items() <span class="keyword">if</span> <span class="keyword">not</span> k.startswith(<span class="string">"__"</span>)</span><br><span class="line"> <span class="number">7</span> &#125;</span><br><span class="line"> <span class="number">8</span> </span><br><span class="line"> <span class="number">9</span> PS1 = <span class="string">"mr&gt;&gt;"</span></span><br><span class="line"><span class="number">10</span> </span><br><span class="line"><span class="number">11</span> WELCOME = <span class="string">f"""</span></span><br><span class="line"><span class="string">12 MathREPL <span class="subst">&#123;__version__&#125;</span>, your Python math expressions evaluator!</span></span><br><span class="line"><span class="string">13 Enter a valid math expression after the prompt "<span class="subst">&#123;PS1&#125;</span>".</span></span><br><span class="line"><span class="string">14 Type "help" for more information.</span></span><br><span class="line"><span class="string">15 Type "quit" or "exit" to exit.</span></span><br><span class="line"><span class="string">16 """</span></span><br><span class="line"><span class="number">17</span> </span><br><span class="line"><span class="number">18</span> USAGE = <span class="string">f"""</span></span><br><span class="line"><span class="string">19 Usage:</span></span><br><span class="line"><span class="string">20 Build math expressions using numeric values and operators.</span></span><br><span class="line"><span class="string">21 Use any of the following functions and constants:</span></span><br><span class="line"><span class="string">22 </span></span><br><span class="line"><span class="string">23 <span class="subst">&#123;<span class="string">', '</span>.join(ALLOWED_NAMES.keys())&#125;</span></span></span><br><span class="line"><span class="string">24 """</span></span><br></pre></td></tr></table></figure>
 
-<p>在这段代码中，你首先导入Python的<code>math</code>模块。该模块将允许你使用预定义的函数和常量执行数学运算。常量“ ALLOWED_NAMES”保存一个字典，其中包含“ math”中的非特殊名称。这样，你就可以将它们与<code>eval（)</code>一起使用。</p>
+<p>在这段代码中，你首先导入 Python 的 <code>math</code> 模块。该模块将允许你使用预定义的函数和常量执行数学运算。常量 <code>ALLOWED_NAMES</code> 保存一个字典，其中包含 <code>math</code> 中的非特殊名称。这样，你就可以将它们与<code>eval()</code>一起使用。</p>
 <p>你还定义了三个字符串常量。你将使用它们作为脚本的用户界面，并根据需要将它们打印到屏幕上。</p>
-<p>现在，你可以编写应用程序的核心功能了。在这种情况下，你需要编写一个函数来接收数学表达式作为输入并返回其结果。为此，你编写了一个名为<code>evaluate（)</code>的函数：</p>
-<p>In this piece of code, you first import Python’s <code>math</code> module. This module will allow you to perform math operations using predefined functions and constants. The constant <code>ALLOWED_NAMES</code> holds a dictionary containing the non-special names in <code>math</code>. This way, you’ll be able to use them with <code>eval()</code>.</p>
-<p>You also define three more string constants. You’ll use them as the user interface to your script and you’ll print them to the screen as needed.</p>
-<p>Now you’re ready to code the core functionality of your application. In this case, you want to code a function that receives math expressions as input and returns their result. To do this, you write a function called <code>evaluate()</code>:</p>
+<p>现在，你可以编写应用程序的核心功能了。在这种情况下，你需要编写一个函数来接收数学表达式作为输入并返回其结果。为此，你编写了一个名为<code>evaluate()</code>的函数：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">26 def evaluate(expression):</span><br><span class="line">27     &quot;&quot;&quot;Evaluate a math expression.&quot;&quot;&quot;</span><br><span class="line">28     # Compile the expression</span><br><span class="line">29     code &#x3D; compile(expression, &quot;&lt;string&gt;&quot;, &quot;eval&quot;)</span><br><span class="line">30 </span><br><span class="line">31     # Validate allowed names</span><br><span class="line">32     for name in code.co_names:</span><br><span class="line">33         if name not in ALLOWED_NAMES:</span><br><span class="line">34             raise NameError(f&quot;The use of &#39;&#123;name&#125;&#39; is not allowed&quot;)</span><br><span class="line">35 </span><br><span class="line">36     return eval(code, &#123;&quot;__builtins__&quot;: &#123;&#125;&#125;, ALLOWED_NAMES)</span><br></pre></td></tr></table></figure>
 
 <p>该函数的工作方式如下：</p>
 <ol>
-<li>在<strong>第26行</strong>中，定义<code>evaluate（)</code>。该函数以字符串“ expression”作为参数，并返回一个[float]（<a href="https://realpython.com/lessons/floats/)，该值表示将字符串作为数学表达式求值的结果。" target="_blank" rel="noopener">https://realpython.com/lessons/floats/)，该值表示将字符串作为数学表达式求值的结果。</a> </li>
-<li>在第29行中，使用compile（)将输入字符串expression转换为已编译的Python代码。如果用户输入无效的表达式，则编译操作将引发<code>SyntaxError</code>。 </li>
-<li>在“第32行”行中，启动“ for”循环以检查“表达式”中包含的名称，并确认可以在最终表达式中使用它们。如果用户提供的名称不在允许的名称列表中，则引发“ NameError”。 </li>
-<li>在“第36行”行中，对数学表达式进行实际评估。注意，按照惯例，你将自定义词典传递给<code>globals</code>和<code>locals</code>。 “ ALLOWED_NAMES”保存在“ math”中定义的函数和常量。</li>
-</ol>
-<p>Here’s how the function works:</p>
-<ol>
-<li>In <strong>line <code>26</code></strong>, you define <code>evaluate()</code>. This function takes the string <code>expression</code> as an argument and returns a <a href="https://realpython.com/lessons/floats/" target="_blank" rel="noopener">float</a> that represents the result of evaluating the string as a math expression.</li>
-<li>In <strong>line <code>29</code></strong>, you use <code>compile()</code> to turn the input string <code>expression</code> into compiled Python code. The compiling operation will raise a <code>SyntaxError</code> if the user enters an invalid expression.</li>
-<li>In <strong>line <code>32</code></strong>, you start a <code>for</code> loop to inspect the names contained in <code>expression</code> and confirm that they can be used in the final expression. If the user provides a name that is not in the list of allowed names, then you raise a <code>NameError</code>.</li>
-<li>In <strong>line <code>36</code></strong>, you perform the actual evaluation of the math expression. Notice that you pass custom dictionaries to <code>globals</code> and <code>locals</code> as good practice recommends. <code>ALLOWED_NAMES</code> holds the functions and constants defined in <code>math</code>.</li>
+<li>在<strong>第26行</strong>中，定义<code>evaluate()</code>。该函数以字符串 <code>expression</code> 作为参数，并返回一个<a href="https://realpython.com/lessons/floats/" target="_blank" rel="noopener">float</a>，该值表示将字符串作为数学表达式求值的结果。 </li>
+<li>在<strong>第29行</strong>中，使用 <code>compile()</code> 将输入字符串 <code>expression</code> 转换为已编译的 Python 代码。如果用户输入无效的表达式，则编译操作将引发<code>SyntaxError</code>。 </li>
+<li>在<strong>第32行</strong>中，启动 <code>for</code> 循环以检查 <code>expression</code> 中包含的名称，并确认可以在最终表达式中使用它们。如果用户提供的名称不在允许的名称列表中，则引发 <code>NameError</code>。 </li>
+<li>在<strong>第36行</strong>中，对数学表达式进行实际执行。注意，按照惯例，你将自定义字典传递给 <code>globals</code> 和<code>locals</code>。 <code>ALLOWED_NAMES</code> 保存在 <code>math</code> 中定义的函数和常量。</li>
 </ol>
 <p><strong>注意：</strong>由于此应用程序使用了<code>math</code>中定义的函数，因此你需要考虑到当使用无效输入值调用它们时，其中一些函数会引发<code>ValueError</code>。</p>
-<p>例如，math.sqrt（-10）会引发错误，因为未定义-10的[平方根]（<a href="https://realpython.com/python-square-root-function/)。" target="_blank" rel="noopener">https://realpython.com/python-square-root-function/)。</a></p>
-<p>稍后，你将在客户端代码中看到如何捕获此错误。对<code>globals</code>和<code>locals</code>参数使用自定义值，以及对** line<code>33</code> **中的名称进行检查，可以使与使用<code>eval（)</code>相关的安全风险降至最低。</p>
-<p>当你在[<code>main（)</code>]（<a href="https://realpython.com/python-main-function）中编写其客户端代码时，你的数学表达式评估器将完成。在此功能中，你将定义程序的主循环，并关闭读取和评估用户在命令行中输入的表达式的周期。" target="_blank" rel="noopener">https://realpython.com/python-main-function）中编写其客户端代码时，你的数学表达式评估器将完成。在此功能中，你将定义程序的主循环，并关闭读取和评估用户在命令行中输入的表达式的周期。</a></p>
-<p><strong>Note:</strong> Since this application uses the functions defined in <code>math</code>, you need to consider that some of these functions will raise a <code>ValueError</code> when you call them with an invalid input value.</p>
-<p>For example, <code>math.sqrt(-10)</code> would raise an error because the <a href="https://realpython.com/python-square-root-function/" target="_blank" rel="noopener">square root</a> of <code>-10</code> is undefined. Later on, you’ll see how to catch this error in your client code.</p>
-<p>The use of custom values for the <code>globals</code> and <code>locals</code> parameters, along with the check of names in <strong>line <code>33</code></strong>, allows you to minimize the security risks associated with the use of <code>eval()</code>.</p>
-<p>Your math expression evaluator will be finished when you write its client code in <a href="https://realpython.com/python-main-function" target="_blank" rel="noopener"><code>main()</code></a>. In this function, you’ll define the program’s main loop and close the cycle of reading and evaluating the expressions that your user enters in the command line.</p>
+<p>例如，math.sqrt(-10)会引发错误，因为-10的<a href="https://realpython.com/python-square-root-function/" target="_blank" rel="noopener">平方根</a> 未定义。</p>
+<p>稍后，你将在客户端代码中看到如何捕获此错误。对<code>globals</code>和<code>locals</code>参数使用自定义值，以及对<strong>line<code>33</code></strong>中的名称进行检查，可以使与<code>eval（)</code>相关的安全风险降至最低。</p>
+<p>当你在<a href="https://realpython.com/python-main-function" target="_blank" rel="noopener"><code>main()</code></a>中编写其客户端代码时，你的数学表达式执行器将要完成。在此函数中，你将定义程序的主循环，并关闭读取和执行用户在命令行中输入的表达式的周期。</p>
 <p>对于此示例，应用程序将：</p>
 <ol>
-<li>向用户打印欢迎消息</li>
-<li>显示提示，准备读取用户的输入</li>
+<li>向用户<strong>打印</strong>欢迎消息</li>
+<li><strong>显示</strong>提示，准备读取用户的输入</li>
 <li><strong>提供</strong>选项以获取使用说明并终止应用程序</li>
 <li><strong>读取</strong>用户的数学表达式</li>
-<li><strong>评估</strong>用户的数学表达式</li>
-<li>将评估结果打印到屏幕上</li>
+<li><strong>执行</strong>用户的数学表达式</li>
+<li>将执行结果<strong>打印</strong>到屏幕上</li>
 </ol>
-<p>检验以下`main（)实现：</p>
-<p>For this example, the application will:</p>
-<ol>
-<li><strong>Print</strong> a welcome message to the user</li>
-<li><strong>Show</strong> a prompt ready to read the user’s input</li>
-<li><strong>Provide</strong> options to get usage instructions and to terminate the application</li>
-<li><strong>Read</strong> the user’s math expression</li>
-<li><strong>Evaluate</strong> the user’s math expression</li>
-<li><strong>Print</strong> the result of the evaluation to the screen</li>
-</ol>
-<p>Check out the following implementation of <code>main()</code>:</p>
+<p>检验以下<code>main()</code>实现：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">38</span> <span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line"><span class="number">39</span>     <span class="string">"""Main loop: Read and evaluate user's input."""</span></span><br><span class="line"><span class="number">40</span>     print(WELCOME)</span><br><span class="line"><span class="number">41</span>     <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line"><span class="number">42</span>         <span class="comment"># Read user's input</span></span><br><span class="line"><span class="number">43</span>         <span class="keyword">try</span>:</span><br><span class="line"><span class="number">44</span>             expression = input(<span class="string">f"<span class="subst">&#123;PS1&#125;</span> "</span>)</span><br><span class="line"><span class="number">45</span>         <span class="keyword">except</span> (KeyboardInterrupt, EOFError):</span><br><span class="line"><span class="number">46</span>             <span class="keyword">raise</span> SystemExit()</span><br><span class="line"><span class="number">47</span> </span><br><span class="line"><span class="number">48</span>         <span class="comment"># Handle special commands</span></span><br><span class="line"><span class="number">49</span>         <span class="keyword">if</span> expression.lower() == <span class="string">"help"</span>:</span><br><span class="line"><span class="number">50</span>             print(USAGE)</span><br><span class="line"><span class="number">51</span>             <span class="keyword">continue</span></span><br><span class="line"><span class="number">52</span>         <span class="keyword">if</span> expression.lower() <span class="keyword">in</span> &#123;<span class="string">"quit"</span>, <span class="string">"exit"</span>&#125;:</span><br><span class="line"><span class="number">53</span>             <span class="keyword">raise</span> SystemExit()</span><br><span class="line"><span class="number">54</span> </span><br><span class="line"><span class="number">55</span>         <span class="comment"># Evaluate the expression and handle errors</span></span><br><span class="line"><span class="number">56</span>         <span class="keyword">try</span>:</span><br><span class="line"><span class="number">57</span>             result = evaluate(expression)</span><br><span class="line"><span class="number">58</span>         <span class="keyword">except</span> SyntaxError:</span><br><span class="line"><span class="number">59</span>             <span class="comment"># If the user enters an invalid expression</span></span><br><span class="line"><span class="number">60</span>             print(<span class="string">"Invalid input expression syntax"</span>)</span><br><span class="line"><span class="number">61</span>             <span class="keyword">continue</span></span><br><span class="line"><span class="number">62</span>         <span class="keyword">except</span> (NameError, ValueError) <span class="keyword">as</span> err:</span><br><span class="line"><span class="number">63</span>             <span class="comment"># If the user tries to use a name that isn't allowed</span></span><br><span class="line"><span class="number">64</span>             <span class="comment"># or an invalid value for a given math function</span></span><br><span class="line"><span class="number">65</span>             print(err)</span><br><span class="line"><span class="number">66</span>             <span class="keyword">continue</span></span><br><span class="line"><span class="number">67</span> </span><br><span class="line"><span class="number">68</span>         <span class="comment"># Print the result if no error occurs</span></span><br><span class="line"><span class="number">69</span>         print(<span class="string">f"The result is: <span class="subst">&#123;result&#125;</span>"</span>)</span><br><span class="line"><span class="number">70</span> </span><br><span class="line"><span class="number">71</span> <span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line"><span class="number">72</span>     main()</span><br></pre></td></tr></table></figure>
 
 <p>在<code>main()</code>内部，首先打印 <code>WELCOME</code> 消息。然后，你会在<a href="https://docs.python.org/3/reference/compound_stmts.html#the-try-statement" target="_blank" rel="noopener"><code>try</code>语句</a>中读取用户的输入，以捕获<code>KeyboardInterrupt</code> 和 <code>EOFError</code>。</p>
-<p>如果这些异常之一发生，则你终止应用程序。如果用户输入 <code>help</code> 选项，则应用程序将显示你的 <code>USAGE</code> 。<br>同样，如果用户输入 <code>quit</code> 或 <code>exit</code>，则应用程序终止。</p>
+<p>如果这些异常之一发生，则终止应用程序。如果用户输入 <code>help</code> 选项，则应用程序将显示你的 <code>USAGE</code> 。<br>同样，如果用户输入 <code>quit</code> 或 <code>exit</code>，则应用程序终止。</p>
 <p>最后，你使用 <code>evaluate()</code> 计算用户的数学表达式，然后将结果打印到屏幕上。请务必注意，对<code>evaluate()</code>的调用会引发以下异常：</p>
-<p><strong>SyntaxError</strong>：当用户输入不遵循Python语法的表达式时，就会发生这种情况。 </p>
+<p><strong>SyntaxError</strong>：当用户输入不遵循 Python 语法的表达式时，就会发生这种情况。 </p>
 <p><strong>NameError</strong>：当用户尝试使用不允许的名称(函数，类或属性)时，会发生这种情况。 </p>
 <p><strong>ValueError</strong>：当用户尝试使用不允许在 <code>math</code> 中给定函数输入的值时，会发生这种情况。` </p>
 <p><strong>注意:</strong> 在 <code>main()</code> 中，你捕获了所有这些异常并相应地向用户打印消息。这将使用户可以查看表达式，解决问题并再次运行程序。而已！</p>
 <p>你已经使用Python的 <code>eval()</code> 在大约70行代码中构建了一个数学表达式执行器。要<a href="https://realpython.com/run-python-scripts/" target="_blank" rel="noopener">运行应用程序</a>，请打开系统的命令行，然后输入以下命令：</p>
-<p>Inside <code>main()</code>, you first print the <code>WELCOME</code> message. Then you read the user’s input in a <a href="https://docs.python.org/3/reference/compound_stmts.html#the-try-statement" target="_blank" rel="noopener"><code>try</code> statement</a> to catch <code>KeyboardInterrupt</code> and <code>EOFError</code>. If either of these exceptions occur, then you terminate the application.</p>
-<p>If the user enters the <code>help</code> option, then the application shows your <code>USAGE</code> guide. Likewise, if the user enters <code>quit</code> or <code>exit</code>, then the application terminates.</p>
-<p>Finally, you use <code>evaluate()</code> to evaluate the user’s math expression, and then you print the result to the screen. It’s important to note that a call to <code>evaluate()</code> can raise the following exceptions:</p>
-<ul>
-<li><strong><code>SyntaxError</code></strong>: This happens when the user enters an expression that doesn’t follow Python syntax.</li>
-<li><strong><code>NameError</code></strong>: This happens when the user tries to use a name (function, class, or attribute) that isn’t allowed.</li>
-<li><strong><code>ValueError</code></strong>: This happens when the user tries to use a value that isn’t allowed as an input to a given function in <code>math</code>.</li>
-</ul>
-<p>Notice that in <code>main()</code>, you catch all of these exceptions and print messages to the user accordingly. This will allow the user to review the expression, fix the problem, and run the program again.</p>
-<p>That’s it! You’ve built a math expression evaluator in about seventy lines of code using Python’s <code>eval()</code>. To <a href="https://realpython.com/run-python-scripts/" target="_blank" rel="noopener">run the application</a>, open your system’s command line and type the following command:</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> python3 mathrepl.py</span></span><br></pre></td></tr></table></figure>
 
-<p>此命令将启动数学表达式评估器的<a href="https://realpython.com/python-command-line-arguments/#the-command-line-interface" target="_blank" rel="noopener">命令行界面</a>(CLI)。你会在屏幕上看到以下内容：</p>
-<p>This command will launch the math expression evaluator’s <a href="https://realpython.com/python-command-line-arguments/#the-command-line-interface" target="_blank" rel="noopener">command-line interface</a> (CLI). You’ll see something like this on your screen:</p>
+<p>此命令将启动数学表达式执行器的<a href="https://realpython.com/python-command-line-arguments/#the-command-line-interface" target="_blank" rel="noopener">命令行界面</a>(CLI)。你会在屏幕上看到以下内容：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">MathREPL 1.0, your Python math expressions evaluator!</span><br><span class="line">Enter a valid math expression after the prompt "mr&gt;&gt;".</span><br><span class="line">Type "help" for more information.</span><br><span class="line">Type "quit" or "exit" to exit.</span><br><span class="line"></span><br><span class="line"><span class="meta">mr&gt;</span><span class="bash">&gt;</span></span><br></pre></td></tr></table></figure>
 
-<p>在那里，你可以输入和评估任何数学表达式。例如，键入以下表达式：</p>
-<p>Once you’re there, you can enter and evaluate any math expression. For example, type the following expressions:</p>
+<p>在那里，你可以输入和执行任何数学表达式。例如，键入以下表达式：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mr&gt;&gt; <span class="number">25</span> * <span class="number">2</span></span><br><span class="line">The result <span class="keyword">is</span>: <span class="number">50</span></span><br><span class="line">mr&gt;&gt; sqrt(<span class="number">25</span>)</span><br><span class="line">The result <span class="keyword">is</span>: <span class="number">5.0</span></span><br><span class="line">mr&gt;&gt; pi</span><br><span class="line">The result <span class="keyword">is</span>: <span class="number">3.141592653589793</span></span><br></pre></td></tr></table></figure>
 
 <p>如果输入有效的数学表达式，则应用程序将对其求值并将结果打印到屏幕上。如果你的表达式有任何问题，那么应用程序将告诉你：</p>
-<p>If you enter a valid math expression, then the application evaluates it and prints the result to your screen. If there are any problems with your expressions, then the application will tell you:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mr&gt;&gt; <span class="number">5</span> * (<span class="number">25</span> + <span class="number">4</span></span><br><span class="line">Invalid input expression syntax</span><br><span class="line">mr&gt;&gt; sum([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>])</span><br><span class="line">The use of <span class="string">'sum'</span> <span class="keyword">is</span> <span class="keyword">not</span> allowed</span><br><span class="line">mr&gt;&gt; sqrt(<span class="number">-15</span>)</span><br><span class="line">math domain error</span><br><span class="line">mr&gt;&gt; factorial(<span class="number">-15</span>)</span><br><span class="line">factorial() <span class="keyword">not</span> defined <span class="keyword">for</span> negative values</span><br></pre></td></tr></table></figure>
 
-<p>在第一个示例中，你错过了右括号，因此你收到一条消息，告诉你语法不正确。然后，调用“ sum（)”(这是不允许的)，并得到一条说明性错误消息。最后，你使用无效的输入值调用“数学”函数，应用程序会生成一条消息，指出你输入中的问题。</p>
-<p>到位了，你的数学表达式评估器已经准备就绪！随时添加一些额外的功能。使你入门的一些想法包括扩大允许名称的字典并添加更详尽的警告消息。</p>
-<p>In the first example, you miss the closing parentheses, so you get a message telling you that the syntax is incorrect. Then you call <code>sum()</code>, which isn’t allowed, and you get an explanatory error message. Finally, you call a <code>math</code> function with an invalid input value, and the application generates a message identifying the problem in your input.</p>
-<p>There you have it—your math expressions evaluator is ready! Feel free to add some extra features. A few ideas to get you started include enlarging the dictionary of allowed names and adding more elaborate warning messages. Give it a shot and let us know in the comments how it goes.</p>
-<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>你可以使用Python的eval（)来评估基于字符串或基于代码的输入中的Python表达式。当你尝试动态评估Python表达式并且希望避免从头开始创建自己的表达式计算器时，此内置函数会很有用。</p>
-<p>在本教程中，你学习了eval（)的工作方式以及如何安全有效地使用它来评估任意Python表达式。 </p>
+<p>在第一个示例中，你错过了右括号，因此你收到一条消息，告诉你语法不正确。然后，调用 <code>sum()</code> (这是不允许的)，并得到一条说明性错误消息。最后，你使用无效的输入值调用“数学”函数，应用程序会生成一条消息，指出你输入中的问题。</p>
+<p>你的数学表达式执行器已经准备就绪！你可以随时添加一些额外的功能。</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>你可以使用 Python 的 <code>eval()</code> 来执行基于字符串或基于代码的输入中的 Python 表达式。当你尝试动态执行Python 表达式并且希望避免从头开始创建自己的表达式计算器时，此内置函数会很有用。</p>
+<p>在本教程中，你学习了 <code>eval()</code> 的工作方式以及如何安全有效地使用它来执行任意 Python 表达式。 </p>
 <p><strong>你现在能够：</strong></p>
-<p>使用Python的<code>eval（)</code>动态<strong>评估基本的Python表达式</strong></p>
-<p><strong>运行更复杂的语句，例如</strong>函数调用<strong>，</strong>对象创建<strong>和使用eval（)进行属性访问</strong></p>
-<p>最大限度地减少与使用Python的eval（)相关的安全风险</p>
-<p>**此外，你还编写了一个使用<code>eval（)</code>进行交互评估的应用程序使用<a href="https://realpython.com/command-line-interfaces-python-argparse/" target="_blank" rel="noopener">命令行界面</a>的数学表达式。<br>你可以通过单击以下链接下载应用程序的代码：</p>
-<p>下载示例代码：** <a href="https://real.python.com/bonus/python-eval-project/" target="_blank" rel="noopener">单击此处以获取将要使用的代码</a>在本教程中了解Python的eval()。</p>
-<p>You can use Python’s <strong><code>eval()</code></strong> to evaluate Python <strong>expressions</strong> from a string-based or code-based input. This built-in function can be useful when you’re trying to evaluate Python expressions on the fly and you want to avoid the hassle of creating your own expressions evaluator from scratch.</p>
-<p>In this tutorial, you’ve learned how <code>eval()</code> works and how to use it safely and effectively to evaluate arbitrary Python expressions.</p>
-<p><strong>You’re now able to:</strong></p>
-<ul>
-<li>Use Python’s <code>eval()</code> to dynamically <strong>evaluate</strong> basic Python expressions</li>
-<li>Run more complex statements like <strong>function calls</strong>, <strong>object creation</strong>, and <strong>attribute access</strong> using <code>eval()</code></li>
-<li>Minimize the <strong>security risks</strong> associated with the use of Python’s <code>eval()</code></li>
-</ul>
-<p>Additionally, you’ve coded an application that uses <code>eval()</code> to interactively evaluate math expressions using a <a href="https://realpython.com/command-line-interfaces-python-argparse/" target="_blank" rel="noopener">command-line interface</a>. You can download the application’s code by clicking on the link below:</p>
-<p><strong>Download the sample code:</strong> <a href="https://realpython.com/bonus/python-eval-project/" target="_blank" rel="noopener">Click here to get the code you’ll use</a> to learn about Python’s eval() in this tutorial.</p>
+<p>使用Python的<code>eval()</code>动态<strong>执行</strong>基本的Python表达式</p>
+<p>运行更复杂的语句，例如<strong>函数调用</strong>，<strong>对象创建</strong>和使用 <code>eval()</code> 进行属性访问</p>
+<p>最大限度地<strong>减少与使用Python的 <code>eval()</code> 相关的安全风险</strong></p>
+<p>此外，你还编写了一个使用<code>eval()</code>进行交互执行的应用程序使用<a href="https://realpython.com/command-line-interfaces-python-argparse/" target="_blank" rel="noopener">命令行界面</a>的数学表达式。</p>
 </section>
     <!-- Tags START -->
     
