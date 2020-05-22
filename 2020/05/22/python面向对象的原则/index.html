@@ -162,16 +162,17 @@
 <main class="app-body flex-box">
   <!-- Article START -->
   <article class="post-article">
-    <section class="markdown-content"><p>Python 拥有类、继承、多态等核心 OOP 特性，当与那些完全基于 OOP 的语言相比，它简化了很多 ，比如它 <strong>没有严格的类私有成员，没有接口（Interface）对象</strong> 等。</p>
+    <section class="markdown-content"><p>本文是阅读 <strong><a href="https://github.com/piglei/one-python-craftsman" target="_blank" rel="noopener">python工匠系列</a></strong> 面向对象代码的原则的简单记录。</p>
+<p>Python 拥有类、继承、多态等核心 OOP 特性，当与那些完全基于 OOP 的语言相比，它简化了很多 ，比如它 <strong>没有严格的类私有成员，没有接口（Interface）对象</strong> 等。</p>
 <p>Python 灵活的函数对象、鸭子类型等许多动态特性又让一些在其他语言中很难做到的事情变得非常简单，比如，你可以花上一大把时间，来学习如何在 Python 中利用 <code>__new__</code> 方法或元类（metaclass）来实现单例设计模式，但最后你会发现，自己 95% 的需求都可以通过直接定义一个模块级全局变量来搞定。</p>
 <p><strong>SOLID原则</strong>：</p>
-<ol>
+<ul>
 <li><strong>S</strong>：Single responsibility principle，单一职责原则，即 <strong>一个类应该仅仅只有一个被修改的理由</strong>。遵循单一职责原则的方法：把大类拆分为小类，使用函数。</li>
 <li><strong>O</strong>:  Open-closed principle，开放-关闭原则，即 <strong>类应该对扩展开放，对修改封闭</strong>，换种说法是 你应该可以在不修改某个类的前提下，扩展它的行为。遵守开开放-关闭原则的方法：用继承，使用组合与注入依赖，使用数据驱动的思想。</li>
 <li><strong>L</strong>: Liskov Substitution Principle，里氏替换原则，即 <strong>当你使用继承时，子类对象应该可以在程序中替代父类对象使用，而不破坏程序原本的功能</strong>。</li>
 <li><strong>I</strong>: Interface Segregation Principle，接口隔离原则，即 <strong>接口是模块间相互交流的抽象协议，客户应该不依赖于它不使用的方法，一个接口所提供的方法，应该就是使用方所需要的方法，不多不少刚刚好</strong>，方法：拆分接口。</li>
 <li><strong>D</strong>: Dependency Inversion Principle，依赖倒置原则，即 <strong>高层模块不应该依赖于底层模块，二者应该依赖于抽象</strong>，实现方式：抽象类abc，保持统一的接口协议。</li>
-</ol>
+</ul>
 <p>具体内容见：<a href="https://github.com/piglei/one-python-craftsman" target="_blank" rel="noopener">python工匠系列</a></p>
 <ul>
 <li><a href="https://github.com/piglei/one-python-craftsman/blob/master/zh_CN/12-write-solid-python-codes-part-1.md" target="_blank" rel="noopener">12. 写好面向对象代码的原则（上）</a></li>
