@@ -10,7 +10,7 @@
   
   <title>
     
-      python面向对象的原则 | shan
+      虚拟化 | shan
     
   </title>
   <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -153,8 +153,8 @@
 </header>
 
     <div id="article-banner">
-  <h2>python面向对象的原则</h2>
-  <p class="post-date">2020-05-22</p>
+  <h2>虚拟化</h2>
+  <p class="post-date">2020-05-24</p>
   <div class="arrow-down">
     <a href="javascript:;"></a>
   </div>
@@ -162,39 +162,40 @@
 <main class="app-body flex-box">
   <!-- Article START -->
   <article class="post-article">
-    <section class="markdown-content"><p>本文是阅读 <strong><a href="https://github.com/piglei/one-python-craftsman" target="_blank" rel="noopener">python工匠系列</a></strong> 面向对象代码的原则的简单记录。</p>
-<p>Python 拥有类、继承、多态等核心 OOP 特性，当与那些完全基于 OOP 的语言相比，它简化了很多 ，比如它 <strong>没有严格的类私有成员，没有接口（Interface）对象</strong> 等。</p>
-<p>Python 灵活的函数对象、鸭子类型等许多动态特性又让一些在其他语言中很难做到的事情变得非常简单，比如，你可以花上一大把时间，来学习如何在 Python 中利用 <code>__new__</code> 方法或元类（metaclass）来实现单例设计模式，但最后你会发现，自己 95% 的需求都可以通过直接定义一个模块级全局变量来搞定。</p>
-<p><strong>SOLID原则</strong>：</p>
+    <section class="markdown-content"><h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>操作系统提供的基本的抽象就是进程，<strong>进程就是运行中的程序</strong>。程序本身只是磁盘上的一些指令，是操作系统让这些字节运行起来，让程序发挥作用。</p>
+<p>人们通常希望能同时运行多个程序，因此如何让操作系统提供几乎有无数个CPU可用的假象成为了一个挑战，因为通常只有少量的物理CPU。</p>
+<p>操作系统通过 <strong>虚拟化CPU</strong> 来提供这种假象，通过让一个进程只运行一个时间片，然后切换到其他进程，操作系统提供了存在多个虚拟CPU的假象。这就是 <strong>时分共享CPU</strong> 技术，允许用户运行多个并发的进程，潜在的开销就是性能的损失，因为如果CPU必须共享，每个进程就会运行的慢一点。</p>
+<h1 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h1><p>为了理解构成进程的是什么，我们必须理解它的<strong>机器状态</strong>：程序在运行时可以读取或更新的内容，它包括<strong>内存</strong>，<strong>寄存器</strong>以及<strong>持久存储设备</strong>。</p>
+<h2 id="进程创建"><a href="#进程创建" class="headerlink" title="进程创建"></a>进程创建</h2><p>那么<strong>程序是如何转化为进程</strong>的呢？即操作系统如何启动并运行一个程序？进程创建实际如何进行？</p>
+<p>进程的创建共分为以下几个步骤：</p>
+<p>1）<strong>将代码和所有的静态数据（如初始化变量）加载到内存中，加载到进程的地址空间中。</strong>程序最初以某种可执行格式驻留在磁盘上。因此程序和静态数据加载到内存的过程，需要操作系统从磁盘读取这些字节，并将它们存放在内存的某处，如图1。</p>
+<p>2）<strong>为程序的运行时栈（run-time stack）分配内存</strong>。例如，C程序使用栈存放局部变量、函数参数及返回地址。</p>
+<p>3）<strong>为程序的堆（heap）分配一些内存</strong>。例如如，在C程序中，堆用于显示请求的动态分配数据。</p>
+<p>4）<strong>执行一些其他的初始化任务，特别是与输入/输出（I/O）相关的任务。</strong>例如，Unix系统中默认每个程序都会分配3个文件描述符，用于标准的输入、输出和错误。</p>
+<p>5）<strong>启动程序。</strong>OS将CPU的控制权转移到新创建的进程中，从而程序开始执行。</p>
+<img src="/2020/05/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%99%9A%E6%8B%9F%E5%8C%96/加载-从程序到进程.png" alt="tu1" style="zoom:60%;">
+
+<p>​                                                                图1    加载：从程序到进程</p>
+<h2 id="进程状态"><a href="#进程状态" class="headerlink" title="进程状态"></a>进程状态</h2><p>进程可能在给定的时间处于的不同状态。它一般会处于以下三种状态：</p>
 <ul>
-<li><strong>S</strong>：Single responsibility principle，单一职责原则，即 <strong>一个类应该仅仅只有一个被修改的理由</strong>。遵循单一职责原则的方法：把大类拆分为小类，使用函数。</li>
-<li><strong>O</strong>:  Open-closed principle，开放-关闭原则，即 <strong>类应该对扩展开放，对修改封闭</strong>，换种说法是 你应该可以在不修改某个类的前提下，扩展它的行为。遵守开开放-关闭原则的方法：用继承，使用组合与注入依赖，使用数据驱动的思想。</li>
-<li><strong>L</strong>: Liskov Substitution Principle，里氏替换原则，即 <strong>当你使用继承时，子类对象应该可以在程序中替代父类对象使用，而不破坏程序原本的功能</strong>。</li>
-<li><strong>I</strong>: Interface Segregation Principle，接口隔离原则，即 <strong>接口是模块间相互交流的抽象协议，客户应该不依赖于它不使用的方法，一个接口所提供的方法，应该就是使用方所需要的方法，不多不少刚刚好</strong>，方法：拆分接口。</li>
-<li><strong>D</strong>: Dependency Inversion Principle，依赖倒置原则，即 <strong>高层模块不应该依赖于底层模块，二者应该依赖于抽象</strong>，实现方式：抽象类abc，保持统一的接口协议。</li>
+<li><strong>运行（running）</strong>：在运行状态下，进程正在处理器上运行。这意味着它正在执行指令。</li>
+<li><strong>就绪（ready）</strong>：在就绪状态下，进程已准备好运行，但由于某种原因，操作系统选择不再此运行。</li>
+<li><strong>阻塞（blocked）</strong>：在阻塞状态下，一个进程执行了某种操作，直到发生其他事件时才会准备运行。</li>
 </ul>
-<p>具体内容见：<a href="https://github.com/piglei/one-python-craftsman" target="_blank" rel="noopener">python工匠系列</a></p>
-<ul>
-<li><a href="https://github.com/piglei/one-python-craftsman/blob/master/zh_CN/12-write-solid-python-codes-part-1.md" target="_blank" rel="noopener">12. 写好面向对象代码的原则（上）</a></li>
-<li><a href="https://github.com/piglei/one-python-craftsman/blob/master/zh_CN/13-write-solid-python-codes-part-2.md" target="_blank" rel="noopener">13. 写好面向对象代码的原则（中）</a></li>
-<li><a href="https://github.com/piglei/one-python-craftsman/blob/master/zh_CN/14-write-solid-python-codes-part-3.md" target="_blank" rel="noopener">14. 写好面向对象代码的原则（下）</a></li>
-</ul>
-</section>
+<p>如果将这些状态映射到图上，见图2</p>
+<p><img src="/2020/05/24/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%99%9A%E6%8B%9F%E5%8C%96/%E8%BF%9B%E7%A8%8B%EF%BC%9A%E7%8A%B6%E6%80%81%E8%BD%AC%E6%8D%A2.png" alt></p>
+<h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2></section>
     <!-- Tags START -->
     
       <div class="tags">
         <span>Tags:</span>
         
-  <a href="/tags#python" >
-    <span class="tag-code">python</span>
+  <a href="/tags#进程" >
+    <span class="tag-code">进程</span>
   </a>
 
-  <a href="/tags#OOP" >
-    <span class="tag-code">OOP</span>
-  </a>
-
-  <a href="/tags#SOLID" >
-    <span class="tag-code">SOLID</span>
+  <a href="/tags#虚拟化" >
+    <span class="tag-code">虚拟化</span>
   </a>
 
       </div>
@@ -205,10 +206,10 @@
   <div class="nav-container">
     <!-- reverse left and right to put prev and next in a more logic postition -->
     
-      <a class="nav-left" href="/2020/05/15/2020-05-15-Python-concurrent-futures%20%E6%A8%A1%E5%9D%97%E5%AE%9E%E7%8E%B0%E5%B9%B6%E5%8F%91/">
+      <a class="nav-left" href="/2020/05/22/2020-05-22-python%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%8E%9F%E5%88%99/">
         <span class="nav-arrow">← </span>
         
-          Python concurrent.futures 模块实现并发
+          python面向对象的原则
         
       </a>
     
@@ -257,7 +258,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="nav">none</ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#引言"><span class="toc-nav-text">引言</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#进程"><span class="toc-nav-text">进程</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li></ol></li></ol>
     
   </div>
 </aside>
@@ -267,7 +268,7 @@
 
 <script>
   (function () {
-    var url = 'http://shanyongbo.github.io/2020/05/22/python面向对象的原则/';
+    var url = 'http://shanyongbo.github.io/2020/05/24/操作系统-虚拟化/';
     var banner = ''
     if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
       $('#article-banner').css({
@@ -329,7 +330,7 @@
     var gitmentConfig = "yanm1ng";
     if (gitmentConfig !== 'undefined') {
       var gitment = new Gitment({
-        id: "python面向对象的原则",
+        id: "虚拟化",
         owner: "yanm1ng",
         repo: "yanm1ng.github.io",
         oauth: {
