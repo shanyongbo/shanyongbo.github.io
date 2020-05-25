@@ -199,9 +199,174 @@
 <li><strong>wait()</strong>：父进程调用wait()，延迟自己的执行，直到子进程执行完毕。</li>
 <li><strong>exec()</strong>：让子进程和父进程执行不同的程序。exec() 会从可执行程序加载代码和静态数据，并用它复写自己的代码段，堆、栈及其他内存空间也会被重新初始化。然后操作系统执行该程序，将参数通过argv传递给该进程。</li>
 </ul>
-<h2 id="控制权"><a href="#控制权" class="headerlink" title="控制权"></a>控制权</h2><p>操作系统必须以高性能的方式虚拟化CPU，同时保持对系统的控制，如何有效的运行进程，同时保留对CPU的控制？为此，需要硬件和操作系统的支持。</p>
+<h2 id="操作系统控制权"><a href="#操作系统控制权" class="headerlink" title="操作系统控制权"></a>操作系统控制权</h2><p>操作系统必须以高性能的方式虚拟化CPU，同时保持对系统的控制，如何有效的运行进程，同时保留对CPU的控制？为此，需要硬件和操作系统的支持。</p>
 <h3 id="受限直接执行"><a href="#受限直接执行" class="headerlink" title="受限直接执行"></a>受限直接执行</h3><p>为了使程序尽可能快的运行，操作系统开发人员开发了一种称之为<strong>受限的直接执行</strong> (limited direct execution) 的技术。整个受限直接执行的过程一般如下：当OS希望启动程序运行时，它会在进程列表中为其创建一个进程条目，为其分配一些内存，将程序代码加载到内存中，找到入口点 main() 函数，跳转到这里，并开始运行用户代码。</p>
-</section>
+<p>​                                                            表1    直接运行协议（无限制）</p>
+<table>
+<thead>
+<tr>
+<th align="center">操作系统</th>
+<th align="center">程序</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">在进程表上创建条目<br>为程序分配内存<br>将程序加载到内存中<br>根据argc/argv设置程序栈</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">清除寄存器<br>执行call main()方法</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">执行main()<br>从main中执行return</td>
+</tr>
+<tr>
+<td align="center">释放进程的内存将进程从列表中清除</td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<p>上面的过程存在两个问题：①如何限制进程的操作并高效的运行它；②如何切换进程；</p>
+<h3 id="1-受限的操作"><a href="#1-受限的操作" class="headerlink" title="1. 受限的操作"></a>1. 受限的操作</h3><p>通过引入一种新的处理器模式，称为<strong>用户模式（user mode）</strong>。在用户模式下运行的代码会受到限制；与之不同的是内核模式（kernel mode），操作系统或者内核以这种方式运行。</p>
+<p>为了执行某种特权操作，现在的硬件一般都提供了用户程序执行<strong>系统调用</strong>的能力，它允许内核向用户程序暴露某些关键的功能，如访问文件系统、创建和销毁进程、与其他进程进行通讯，分配更多的内存等。</p>
+<p>要执行系统调用，程序必须执行特殊的<strong>陷阱（trap）</strong>指令。该指令同时跳入内核并将特权级别提升至内核模式。一旦进入内核，系统就可以执行任何需要的特权操作。完成后，操作系统调用一个特殊的<strong>从陷阱返回的指令（return-from-trap）</strong>,该指令返回到发起调用的用户程序中，同时将级别降低回到用户模式。</p>
+<p>内核通过在启动时设置的<strong>陷阱表（trap table）</strong>来实现在OS内运行正确的代码。当机器启动时，他在内核模式下运行，因此可以根据需要只有配置机器硬件。操作系统第一件事就是告诉硬件在发生某种异常事件时要运行的代码。操作系统通常会通过某些特殊的指令，通知硬件这些陷阱处理程序的位置，一旦硬件被通知，他就会记住这些处理程序的位置。</p>
+<p>在表2中，我们假设每个进程都有一个内核栈，在进入内核和离开内核时，寄存器分别被保存和恢复。</p>
+<p>​                                                                表2    受限直接运行协议</p>
+<table>
+<thead>
+<tr>
+<th>操作系统@启动（内核模式）</th>
+<th>硬件</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>初始化陷阱表</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>记住系统调用处理程序的地址</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>操作系统@运行（内核模式）</strong></td>
+<td><strong>硬件</strong></td>
+<td><strong>程序（应用模式）</strong></td>
+</tr>
+<tr>
+<td>在进程表上创建条目<br>为程序分配内存<br>将程序加载到内存中<br>根据argc/argv设置程序栈<br>用寄存器/程序计数器填充内核栈<br>从陷阱返回</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>从内核栈恢复寄存器<br>转向用户模式<br>跳转到main</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>运行main<br>……<br>调用系统调用<br>陷入操作系统</td>
+</tr>
+<tr>
+<td></td>
+<td>将寄存器保存到内核栈<br>转向内核模式<br>跳刀陷阱处理程序</td>
+<td></td>
+</tr>
+<tr>
+<td>处理陷阱<br>做系统调用的工作<br>从陷阱中返回</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>从内核栈恢复寄存器<br>转向用户模式<br>跳到陷阱之后的程序计数器</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>……从main返回<br>陷入（通过exit()）</td>
+</tr>
+<tr>
+<td>释放进程的内存<br>将进程从进程列表中清除</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="2-进程间切换"><a href="#2-进程间切换" class="headerlink" title="2. 进程间切换"></a>2. 进程间切换</h3><p>一个进程在CPU上运行，意味着操作系统并没有运行，那么如何让操作系统重新获得CPU的控制权，以便它可以在进程间切换，就是进程切换遇到的关键问题。</p>
+<h4 id="协作方式：等待系统调用"><a href="#协作方式：等待系统调用" class="headerlink" title="协作方式：等待系统调用"></a>协作方式：等待系统调用</h4><p>在这种方式下，操作系统相信系统的进程会合理运行，运行时间过长的进程被假定会定期放弃CPU，以便于操作系统可以决定其他任务。</p>
+<h4 id="非协作方式：操作系统进行控制"><a href="#非协作方式：操作系统进行控制" class="headerlink" title="非协作方式：操作系统进行控制"></a>非协作方式：操作系统进行控制</h4><p>事实证明，没有硬件的额外帮助，如果进程拒绝进行系统调用，那么控制权不会被交还到操作系统，操作系统无法做任何事情。</p>
+<p>我们可以通过<strong>时钟中断（timer interrupt）</strong>来解决上面的问题。时钟设备可以编程为几毫秒产生一次中断，产生中断时，当前正在运行的进程停止，操作系统中预先配置的中断处理程序会运行，此时，操作系统重新获得CPU的控制权，进行进程的切换。</p>
+<p><strong>保存和恢复上下文</strong></p>
+<p>既然操作系统已经重新获得控制权，那么无论是通过系统调用协作还是通过时钟中断更强制执行，都必须决定：是继续运行，还是切换进程。这个决定是由<strong>调度程序（scheduler）</strong>决定的。</p>
+<p>如果进行切换，那么OS会执行一些底层代码，即所谓的上下文切换，即操作系统要做的就是为当前正在执行的进程保存一些寄存器的值，并为即将执行的进程恢复一些寄存器的值。</p>
+<p>为了保存正在运行的进程的上下文，操作系统会执行一些底层的汇编代码，来保存通用寄存器、程序计数器，以及当前正在运行的内核栈指针，然后恢复寄存器、程序计数器，并切换内核栈，供即将运行的程序使用。通过切换栈，内核在进入切换代码调用时，是一个进程的上下文，在返回时，是另一个进程的上下文。当操作系统最终执行从陷阱返回的指令时，即执行的进程变成了当前运行的进程，上下文切换完毕。</p>
+<p>表3 展示了整个过程。展示进程A切换到进程B的过程。</p>
+<p>​                                                                表3    受限直接执行协议（时钟中断）</p>
+<table>
+<thead>
+<tr>
+<th>操作系统@启动（内核模式）</th>
+<th>硬件</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>初始化陷阱表</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>记住以下地址：<br>系统调用处理程序<br>时钟处理程序</td>
+<td></td>
+</tr>
+<tr>
+<td>启动中断时钟</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>启动时钟<br>每隔x ms中断CPU</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>操作系统@运行（内核模式）</strong></td>
+<td><strong>硬件</strong></td>
+<td><strong>程序（应用模式）</strong></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>进程A……</td>
+</tr>
+<tr>
+<td></td>
+<td>时钟中断<br>将寄存器（A）保存到内核栈（A）<br>转向内核模式<br>跳到陷阱处理程序</td>
+<td></td>
+</tr>
+<tr>
+<td>处理陷阱<br>调用switch()例程<br>将寄存器（A）保存到进程结构（A）<br>将进程结构（B）恢复到寄存器（B）<br>从陷阱返回</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>从内核栈（B）恢复寄存器（B）<br>转向用户模式<br>跳到B的程序计数器</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>进程B……</td>
+</tr>
+</tbody></table>
+<h2 id="进程调度"><a href="#进程调度" class="headerlink" title="进程调度"></a>进程调度</h2></section>
     <!-- Tags START -->
     
       <div class="tags">
@@ -275,7 +440,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#引言"><span class="toc-nav-text">引言</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#进程"><span class="toc-nav-text">进程</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#控制权"><span class="toc-nav-text">控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li></ol></li></ol></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#引言"><span class="toc-nav-text">引言</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#进程"><span class="toc-nav-text">进程</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li></ol>
     
   </div>
 </aside>
