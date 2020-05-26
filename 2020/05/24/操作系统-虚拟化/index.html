@@ -162,10 +162,10 @@
 <main class="app-body flex-box">
   <!-- Article START -->
   <article class="post-article">
-    <section class="markdown-content"><h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>操作系统提供的基本的抽象就是进程，<strong>进程就是运行中的程序</strong>。程序本身只是磁盘上的一些指令，是操作系统让这些字节运行起来，让程序发挥作用。</p>
+    <section class="markdown-content"><h1 id="CPU虚拟化"><a href="#CPU虚拟化" class="headerlink" title="CPU虚拟化"></a>CPU虚拟化</h1><p>操作系统提供的基本的抽象就是进程，<strong>进程就是运行中的程序</strong>。程序本身只是磁盘上的一些指令，是操作系统让这些字节运行起来，让程序发挥作用。</p>
 <p>人们通常希望能同时运行多个程序，因此如何让操作系统提供几乎有无数个CPU可用的假象成为了一个挑战，因为通常只有少量的物理CPU。</p>
 <p>操作系统通过 <strong>虚拟化CPU</strong> 来提供这种假象，通过让一个进程只运行一个时间片，然后切换到其他进程，操作系统提供了存在多个虚拟CPU的假象。这就是 <strong>时分共享CPU</strong> 技术，允许用户运行多个并发的进程，潜在的开销就是性能的损失，因为如果CPU必须共享，每个进程就会运行的慢一点。</p>
-<h1 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h1><p>为了理解构成进程的是什么，我们必须理解它的<strong>机器状态</strong>：程序在运行时可以读取或更新的内容，它包括<strong>内存</strong>，<strong>寄存器</strong>以及<strong>持久存储设备</strong>。</p>
+<p>进程为了理解构成进程的是什么，我们必须理解它的<strong>机器状态</strong>：程序在运行时可以读取或更新的内容，它包括<strong>内存</strong>，<strong>寄存器</strong>以及<strong>持久存储设备</strong>。</p>
 <h2 id="进程创建"><a href="#进程创建" class="headerlink" title="进程创建"></a>进程创建</h2><p>那么<strong>程序是如何转化为进程</strong>的呢？即操作系统如何启动并运行一个程序？进程创建实际如何进行？</p>
 <p>进程的创建共分为以下几个步骤：</p>
 <p>1）<strong>将代码和所有的静态数据（如初始化变量）加载到内存中，加载到进程的地址空间中。</strong>程序最初以某种可执行格式驻留在磁盘上。因此程序和静态数据加载到内存的过程，需要操作系统从磁盘读取这些字节，并将它们存放在内存的某处，如图1。</p>
@@ -366,7 +366,43 @@
 <td>进程B……</td>
 </tr>
 </tbody></table>
-<h2 id="进程调度"><a href="#进程调度" class="headerlink" title="进程调度"></a>进程调度</h2></section>
+<h2 id="进程调度"><a href="#进程调度" class="headerlink" title="进程调度"></a>进程调度</h2><p>前面了解了进程底层机制，下面介绍一下操作系统调度程序采用的上层策略。</p>
+<p>在了解策略之前，我们先要了解一下与系统中运行的进程有关的<strong>工作负载</strong>（workload），确定工作负载时构建调度策略的关键部分。除了工作负载外，我们还需要<strong>调度指标</strong>来比较不同的策略，它包括两种：公平指标和性能指标。、</p>
+<p>其中性能指标中一种重要的指标为<strong>周转时间</strong>（turnaround time），任务的周转时间指的是任务完成时间减去任务到达系统的时间。如果考虑周转周期，下面介绍几种有趣的调度方式。</p>
+<ol>
+<li><p><strong>先进先出</strong>（FIFO）：也称为先到先服务（FCFS）。</p>
+</li>
+<li><p><strong>最短任务优先原则</strong>（SJF）：shortest job first，先运行最短的任务，然后次短的任务，如此往复。</p>
+</li>
+<li><p><strong>最短完成时间优先</strong>（STCF）： shortest time-to-completion first，或称为抢占式最短作业优先（preemptive shortest job first, PSJF），当新任务进入系统时，它会确定剩余工作和新工作中，谁的剩余时间最少，然后调度工作。</p>
+</li>
+</ol>
+<p>如果我们知道任务长度，而且任务只使用CPU，而且我们唯一的衡量是周转时间，那么 STCF 将是一个很好的策略。新引入的分时系统改变了这些，为了获得更好的交互性，需要一个新的度量标准，即响应时间。响应时间指的是从任务到达系统到首次运行的时间。下面是一些考虑了新指标的调度方式。</p>
+<ol>
+<li><p><strong>轮转</strong>（Round-Robin）：RR在一个时间片内运行工作，然后切换到运行队列中的下一个任务，而不是运行一个任务直到结束。反复执行，直到所有任务结束。因此，RR有时被称为时间切片。其时间片的长度必须是时钟中断周期的倍数。</p>
+</li>
+<li><p><strong>多级反馈队列</strong>（MLFQ）：Multi-level Feedback Queue，MLFQ基本规则：</p>
+<ol>
+<li>如果A的优先级 &gt; B的优先级，运行A；</li>
+<li>如果A的优先级 = B的优先级，轮转运行A和B。</li>
+<li>工作进入系统时，放在最高优先级（最上层对垒）；</li>
+<li>一旦工作用完了其在某一层的时间配额（无论主动放弃多少次CPU），就降低其优先级。</li>
+<li>经过一段时间S，就将系统中所有工作重新加入到最高优先级队列。</li>
+</ol>
+</li>
+</ol>
+<p><strong>比例份额调度</strong>（proportional-share）：公平份额调度程序，其最终目标是确保每个工作获得一定的CPU时间，而不是优化周转时间和响应时间。比例份额调度中有一种称为彩票调度的方式，其基本思想是：每隔一段时间，都会举行一次彩票抽奖，以确定接下来该运行哪个进程。</p>
+<p><strong>彩票调度</strong>（lottery scheduling）:这种调度利用了随机性，彩票数代表了进程占有的某个资源份额，一个进程拥有的彩票数占总票数的百分比，就是它占有资源的份额。通过不断的抽取彩票，彩票调度从概率上获得份额比例。随机方法的优势：</p>
+<ol>
+<li><p>避免奇怪的边角情况，例如LRU替换算法，在有重复序列的负载时表现的非常差。</p>
+</li>
+<li><p>随机方法很轻量，几乎不用记录任何状态。</p>
+</li>
+<li><p>随机方法很快，只要能很快的生成随机数，做出决策就很快。</p>
+</li>
+</ol>
+<h1 id="内存虚拟化"><a href="#内存虚拟化" class="headerlink" title="内存虚拟化"></a>内存虚拟化</h1><p>随着时分共享流行，当多个进程驻留在内存中时，大家不希望一个进程可以读取其他进程的信息，因此操作系统需要提供一个易用的物理内存抽象。这个抽象叫做<strong>地址空间（address space）</strong>，是运行程序看到的系统中的内存。理解这个基本的操作系统内存抽象，是了解虚拟内存的关键。</p>
+</section>
     <!-- Tags START -->
     
       <div class="tags">
@@ -378,6 +414,10 @@
 
   <a href="/tags#虚拟化" >
     <span class="tag-code">虚拟化</span>
+  </a>
+
+  <a href="/tags#操作系统" >
+    <span class="tag-code">操作系统</span>
   </a>
 
       </div>
@@ -440,7 +480,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#引言"><span class="toc-nav-text">引言</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#进程"><span class="toc-nav-text">进程</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#CPU虚拟化"><span class="toc-nav-text">CPU虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#内存虚拟化"><span class="toc-nav-text">内存虚拟化</span></a></li></ol>
     
   </div>
 </aside>
