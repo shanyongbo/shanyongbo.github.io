@@ -162,7 +162,8 @@
 <main class="app-body flex-box">
   <!-- Article START -->
   <article class="post-article">
-    <section class="markdown-content"><h1 id="CPU虚拟化"><a href="#CPU虚拟化" class="headerlink" title="CPU虚拟化"></a>CPU虚拟化</h1><p>操作系统提供的基本的抽象就是进程，<strong>进程就是运行中的程序</strong>。程序本身只是磁盘上的一些指令，是操作系统让这些字节运行起来，让程序发挥作用。</p>
+    <section class="markdown-content"><p>本文为操作系统导论中关于虚拟化部分的读书笔记。</p>
+<h1 id="CPU虚拟化"><a href="#CPU虚拟化" class="headerlink" title="CPU虚拟化"></a>CPU虚拟化</h1><p>操作系统提供的基本的抽象就是进程，<strong>进程就是运行中的程序</strong>。程序本身只是磁盘上的一些指令，是操作系统让这些字节运行起来，让程序发挥作用。</p>
 <p>人们通常希望能同时运行多个程序，因此如何让操作系统提供几乎有无数个CPU可用的假象成为了一个挑战，因为通常只有少量的物理CPU。</p>
 <p>操作系统通过 <strong>虚拟化CPU</strong> 来提供这种假象，通过让一个进程只运行一个时间片，然后切换到其他进程，操作系统提供了存在多个虚拟CPU的假象。这就是 <strong>时分共享CPU</strong> 技术，允许用户运行多个并发的进程，潜在的开销就是性能的损失，因为如果CPU必须共享，每个进程就会运行的慢一点。</p>
 <p>进程为了理解构成进程的是什么，我们必须理解它的<strong>机器状态</strong>：程序在运行时可以读取或更新的内容，它包括<strong>内存</strong>，<strong>寄存器</strong>以及<strong>持久存储设备</strong>。</p>
@@ -605,10 +606,6 @@
       <div class="tags">
         <span>Tags:</span>
         
-  <a href="/tags#进程" >
-    <span class="tag-code">进程</span>
-  </a>
-
   <a href="/tags#虚拟化" >
     <span class="tag-code">虚拟化</span>
   </a>
