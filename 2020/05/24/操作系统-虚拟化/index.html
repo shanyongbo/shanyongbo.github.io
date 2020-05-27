@@ -434,7 +434,172 @@
 <li><p>错误的调用free()</p>
 </li>
 </ul>
-<h2 id="地址转换"><a href="#地址转换" class="headerlink" title="地址转换"></a>地址转换</h2></section>
+<h2 id="地址转换"><a href="#地址转换" class="headerlink" title="地址转换"></a>地址转换</h2><p>我们在实现虚拟内存的时候，和CPU虚拟化的追求一样，在实现高效控制的同时，提供期望的虚拟化。控制意味着操作系统要确保应用程序只能访问它自己的内存空间。因此，要保护应用程序不会相互影响，也不会影响操作系统，我们需要硬件的帮助。虚拟内存也要具有一定的灵活性，即我们希望程序能以任何方式访问它自己的地址空间，从而让系统更容易编程。所以关键问题是：<strong>如何高效、灵活地虚拟化内存</strong>？</p>
+<p>这里，利用了一种通用技术，有时称为基于硬件的地址转换（hardware-based address translation），简称为<strong>地址转换</strong>。利用地址转换，硬件对每次内存的访问进行处理（即指令获取、数据读写），将指令中的虚拟地址转换为数据实际存储的物理地址。</p>
+<p>仅仅依靠硬件不足以实现虚拟内存，因为它只是提供了底层机制来提高效率。操作系统必须在关键位置介入，设置好硬件，以便完成正确的地址转换。因此它必须管理物理内存，记录被占用和空闲的内存位置，谨慎介入，保持对内存的管理和控制。</p>
+<p>所有这些工作，都是为了创造一种假象：每个程序都有自己的私有内存，那里存放着他们的代码和数据。</p>
+<h3 id="动态重定位-基于硬件"><a href="#动态重定位-基于硬件" class="headerlink" title="动态重定位-基于硬件"></a>动态重定位-基于硬件</h3><p><strong>动态重定位（dynamic relocation）</strong>：又称<strong>基址加界限机制</strong>（base and bound），具体来说，就是每个CPU需要两个硬件寄存器：基址（base）寄存器和界限（bound）寄存器，有时称为限制（limit）寄存器。</p>
+<p>当运行程序的时候，该进程产生的所有内存引用，都会被处理器通过以下方式转为物理内存： physical address = virtual address + base</p>
+<p>进程中使用的内存引用都是虚拟地址，硬件将虚拟地址加上基址寄存器中的内容，得到物理地址，再发给内存系统。将虚拟地址转化为物理地址，这正是所谓的<strong>地址转换</strong>技术。由于这种定位是发生在运行时的，我们可以在进程开始运行后改变其地址空间，这种技术一般称为<strong>动态重定位</strong>。</p>
+<p>其中界限寄存器提供了访问保护，如果进程要访问超过这个界限或者负值的虚拟地址，CPU将触发异常，进程可能被终止。我们将负责地址转换的部分统称为<strong>内存管理单元</strong>（Memory Management Unit）。</p>
+<p>下面三个表格介绍了动态重定位需要的硬件要求和操作系统的职责：</p>
+<p>​                                                                                        表3    动态重定位：硬件要求</p>
+<table>
+<thead>
+<tr>
+<th>硬件要求</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>特权模式</td>
+<td>需要，以防止用户模式的进程执行特权操作</td>
+</tr>
+<tr>
+<td>基址/界限寄存器</td>
+<td>每个CPU需要一对寄存器来支持地址转换和界限检查</td>
+</tr>
+<tr>
+<td>能够转换虚拟地址并检查是否越界</td>
+<td>电路来完成转换和检查界限，在这种情况下，非常简单</td>
+</tr>
+<tr>
+<td>修改基址/界限寄存器的特权指令</td>
+<td>在让用户程序运行之前，操作系统必须能够设置这些值</td>
+</tr>
+<tr>
+<td>注册异常处理程序的特权指令</td>
+<td>操作系统必须告诉硬件，如果异常发生，难么执行哪些代码</td>
+</tr>
+<tr>
+<td>能够触发异常</td>
+<td>若果进程试图使用特权指令或者越界的内存</td>
+</tr>
+</tbody></table>
+<p>​                                                                                    表4    动态重定位：操作系统职责</p>
+<table>
+<thead>
+<tr>
+<th>操作系统的要求</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>内存管理</td>
+<td>需要为新进程分配内存<br>从终止的进程回收内存<br>一般通过空闲列表来管理内存</td>
+</tr>
+<tr>
+<td>基址/界限管理</td>
+<td>必须在上下文切换时正确设置基址/界限寄存器</td>
+</tr>
+<tr>
+<td>异常处理</td>
+<td>当异常发生时执行的代码，可能的动作是终止犯错的进程</td>
+</tr>
+</tbody></table>
+<p>下表展示了大多数硬件与操作系统的交互。</p>
+<p>​                                                                                    表5    受限直接执行（动态重定位）</p>
+<table>
+<thead>
+<tr>
+<th>操作系统@启动（内核模式）</th>
+<th>硬件</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>初始化陷阱表</td>
+<td>记住以下地址<br>系统调用处理程序<br>时钟处理程序<br>非法内存处理程序<br>非常指令处理程序</td>
+<td></td>
+</tr>
+<tr>
+<td>开始中断时钟</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>开始时钟后，在 x ms后中断</td>
+<td></td>
+</tr>
+<tr>
+<td>初始化进程表<br>初始化空闲列表</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>操作系统@运行（核心模式）</td>
+<td>硬件</td>
+<td>程序（用户模式）</td>
+</tr>
+<tr>
+<td>为了启动进程A：<br>在进程中分配条目<br>为进程分配内存<br>设置基址/界限寄存器<br>从陷阱中返回（进入A）</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>恢复A的寄存器<br>转向用户模式<br>跳到A（最初）的程序计数器</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>进程A运行<br>获取指令</td>
+</tr>
+<tr>
+<td></td>
+<td>转换虚拟地址并执行获取</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>执行指令</td>
+</tr>
+<tr>
+<td></td>
+<td>若果显式价加载/保存<br>确保地址不越界<br>转换虚拟地址并执行<br>加载/保存</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>……</td>
+</tr>
+<tr>
+<td></td>
+<td>时钟中断<br>转向内核模式<br>跳到中断处理程序</td>
+<td></td>
+</tr>
+<tr>
+<td>处理陷阱<br>调用switch() 例程<br>将寄存器A保存到进程结构A（包括基址/界限）<br>从进程结构B恢复寄存器B（包括基址/界限）<br>从陷阱返回（进入B）</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>恢复B的寄存器<br>转向用户模式<br>跳到B的程序计数器</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>进程B运行<br>执行错误的加载</td>
+</tr>
+<tr>
+<td></td>
+<td>加载越界<br>转向内核模式<br>跳到陷阱处理程序</td>
+<td></td>
+</tr>
+<tr>
+<td>处理本期报告<br>决定终止进程B<br>回收B的内存<br>移出B在进程列表中的条目</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h3><p>由于栈和堆之间的空间并没有被使用，确依然占用了实际的物理内存。因此简单的动态重定位会造成虚拟空间的浪费，那么现在的关键问题是：怎样支持大地址空间，同时栈和堆之间有大量空闲空间？</p>
+</section>
     <!-- Tags START -->
     
       <div class="tags">
@@ -512,7 +677,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#CPU虚拟化"><span class="toc-nav-text">CPU虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#内存虚拟化"><span class="toc-nav-text">内存虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址空间"><span class="toc-nav-text">地址空间</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#内存操作API"><span class="toc-nav-text">内存操作API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址转换"><span class="toc-nav-text">地址转换</span></a></li></ol></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#CPU虚拟化"><span class="toc-nav-text">CPU虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#内存虚拟化"><span class="toc-nav-text">内存虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址空间"><span class="toc-nav-text">地址空间</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#内存操作API"><span class="toc-nav-text">内存操作API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址转换"><span class="toc-nav-text">地址转换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#动态重定位-基于硬件"><span class="toc-nav-text">动态重定位-基于硬件</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#分段"><span class="toc-nav-text">分段</span></a></li></ol></li></ol></li></ol>
     
   </div>
 </aside>
