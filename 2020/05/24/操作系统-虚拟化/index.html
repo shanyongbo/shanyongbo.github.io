@@ -439,7 +439,7 @@
 <p>这里，利用了一种通用技术，有时称为基于硬件的地址转换（hardware-based address translation），简称为<strong>地址转换</strong>。利用地址转换，硬件对每次内存的访问进行处理（即指令获取、数据读写），将指令中的虚拟地址转换为数据实际存储的物理地址。</p>
 <p>仅仅依靠硬件不足以实现虚拟内存，因为它只是提供了底层机制来提高效率。操作系统必须在关键位置介入，设置好硬件，以便完成正确的地址转换。因此它必须管理物理内存，记录被占用和空闲的内存位置，谨慎介入，保持对内存的管理和控制。</p>
 <p>所有这些工作，都是为了创造一种假象：每个程序都有自己的私有内存，那里存放着他们的代码和数据。</p>
-<h3 id="动态重定位-基于硬件"><a href="#动态重定位-基于硬件" class="headerlink" title="动态重定位-基于硬件"></a>动态重定位-基于硬件</h3><p><strong>动态重定位（dynamic relocation）</strong>：又称<strong>基址加界限机制</strong>（base and bound），具体来说，就是每个CPU需要两个硬件寄存器：基址（base）寄存器和界限（bound）寄存器，有时称为限制（limit）寄存器。</p>
+<h3 id="动态重定位"><a href="#动态重定位" class="headerlink" title="动态重定位"></a>动态重定位</h3><p><strong>动态重定位（dynamic relocation）</strong>：又称<strong>基址加界限机制</strong>（base and bound），具体来说，就是每个CPU需要两个硬件寄存器：基址（base）寄存器和界限（bound）寄存器，有时称为限制（limit）寄存器。</p>
 <p>当运行程序的时候，该进程产生的所有内存引用，都会被处理器通过以下方式转为物理内存： physical address = virtual address + base</p>
 <p>进程中使用的内存引用都是虚拟地址，硬件将虚拟地址加上基址寄存器中的内容，得到物理地址，再发给内存系统。将虚拟地址转化为物理地址，这正是所谓的<strong>地址转换</strong>技术。由于这种定位是发生在运行时的，我们可以在进程开始运行后改变其地址空间，这种技术一般称为<strong>动态重定位</strong>。</p>
 <p>其中界限寄存器提供了访问保护，如果进程要访问超过这个界限或者负值的虚拟地址，CPU将触发异常，进程可能被终止。我们将负责地址转换的部分统称为<strong>内存管理单元</strong>（Memory Management Unit）。</p>
@@ -599,7 +599,37 @@
 <td></td>
 </tr>
 </tbody></table>
-<h3 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h3><p>由于栈和堆之间的空间并没有被使用，确依然占用了实际的物理内存。因此简单的动态重定位会造成虚拟空间的浪费，那么现在的关键问题是：怎样支持大地址空间，同时栈和堆之间有大量空闲空间？</p>
+<h3 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h3><p>由于栈和堆之间的空间并没有被使用，确依然占用了实际的物理内存。因此简单的动态重定位会造成虚拟空间的浪费，那么现在的关键问题是：怎样支持大地址空间，同时栈和堆之间有大量空闲空间？为了解决这个问题，产生了<strong>分段（segmentation）</strong>的概念。</p>
+<p>分段的概念很简单，<strong>就是在MMU中引入不止一个基址和界限寄存器对，而是给地址空间内的每个逻辑段（segment）一对</strong>。一个段只是地址空间里的一个连续定长的区域，在典型的地址空间里有三个逻辑不同的段：代码、栈和堆。分段的机制使得操作系统能够将不同的段放到不同的物理区域，从而避免了虚拟空间中的未使用部分占用物理内存。</p>
+<p>硬件在地址转换时使用段寄存器。如何知道段内偏移量以及地址引用了哪个段？</p>
+<ol>
+<li><strong>显式方式（explicit）</strong>：就是用虚拟地址开头几位来标识不同的段。如一个14位的虚拟地址，前两位来标识，后面12位为偏移量</li>
+<li><strong>隐式方式（implicit）</strong>：硬件通过地址产生的方式来确定段。如地址如果是由程序计数器产生的，那么地址在代码段，如果是基于栈或者基址指针，它在栈段，其他地址则在堆段。</li>
+</ol>
+<p><strong>栈</strong>在物理内存中反向增长的，它和代码段或者堆段地址转换是有所不同的。这里需要一点硬件的支持，除了基址和界限外，硬件还需要知道段的增长方向。</p>
+<p>通过硬件的支持，我们可以在地址空间之间共享某些内存段，这样可以用来节省内存。为了支持共享，需要的硬件就是<strong>保护位（protection bit）</strong>。<strong>就是为每个段增加了几个位，标识程序是否能够读写该段，或者执行其中的代码。</strong>通过将代码段标记为只读，同样的代码可以被多个进程共享，而不用担心破坏隔离。</p>
+<p><strong>粗粒度分段</strong>就是将地址空间分成较大的、粗粒度的块。<strong>细粒度分段</strong>就是更加灵活地将地址空间划分为大量较小的段。支持细粒度分段需要硬件进一步支持，并在内存中保存某种段表。</p>
+<p>内存地址空间分段带来了一些新的问题。操作系统在切换上下文时应该做什么？如何管理物理内存的空闲空间？</p>
+<p>第一个问题的是：各个段寄存器中的内容必须保存和恢复。</p>
+<p>第二个问题：一种解决方案是<strong>紧凑物理内存</strong>重新安排原有的段，但紧凑成本很高。另一种解决方案是<strong>利用空闲列表管理算法，试图保留大的内存块用于分配</strong>，从空闲链表中找最接近需要分配空间的算法有：最优匹配，最坏匹配、首次匹配，以及伙伴算法。</p>
+<h2 id="空闲空间管理"><a href="#空闲空间管理" class="headerlink" title="空闲空间管理"></a>空闲空间管理</h2><p>当使用用户级的内存分配库或者操作系统用的分段，都会出现空闲空间被分割为不同大小的块，成为碎片，后续请求失败的情况。因为物理内存很快充满了许多空闲空间的小洞，因而很难分配给新的段，或扩大已有的段，这种问题被称为<strong>外部碎片（external fragmentation）</strong>。那么关键问题是：<strong>如何管理空闲空间，什么策略可以让碎片最小化？不同方法的时间和空间开销如何？</strong></p>
+<h3 id="底层机制"><a href="#底层机制" class="headerlink" title="底层机制"></a>底层机制</h3><ol>
+<li>在释放一块内存时，合并可用空间。</li>
+<li>追踪已分配空间的大小。</li>
+<li>嵌入空闲列表。</li>
+<li>向操作系统申请更大的堆。</li>
+</ol>
+<h3 id="策略"><a href="#策略" class="headerlink" title="策略"></a>策略</h3><ul>
+<li><strong>最优匹配（best fit）</strong>：遍历整个空闲列表，找到和请求大小一样或者更大的空闲块，然后返回这组候选者中最小的一块。需要付出较高的性能代价。</li>
+<li><strong>最差匹配（worst fit）</strong>：尝试找到最大的空闲块，分割并满足用户的需求后，将剩余的块加入空闲列表。性能差，表现也差，导致过量的碎片。</li>
+<li><strong>首次匹配（first fit）</strong>：找到第一个足够大的块，将请求的空间返回给用户。有速度优势，如何管理空闲列表的顺序变的十分重要，如基于地址的排序。</li>
+<li><strong>下次匹配（next fit）</strong>：多维护一个指针，指向上次查找的结果，其思想是将对空闲空间的查找操作扩散到整个列表，避免对列表开头频繁的分割，性能类似首次匹配，同时避免了遍历查找。</li>
+<li><strong>分离空闲列表（segregated list）</strong>：如果摸个应用程序经常申请一种大小的内存空间，那么就用一个独立的列表，只管理这样大小的对象，其他大小的请求都交给更通用的内存分配程序。减少了碎片，但引入了复杂性。如厚块分配程序（slab allocator）。</li>
+<li><strong>伙伴系统（binary buddy allocator）</strong>：二分伙伴分配程序，当一个内存分配请求是，空闲的空间被递归地一分为二，直到刚好满足请求的大小，这时请求返回给用户。在其中某块内存被归还时，它会递归合并空闲的伙伴，直到合并整个内存区域。优点是很容易找到伙伴合并内存，缺点是内部碎片问题。</li>
+<li><strong>其他</strong>：上面的这些方法缺乏可扩展性，查找单列表可能很慢，因此还有包括<strong>平衡二叉树，伸展树，偏序树</strong>等复杂的数据结构。</li>
+</ul>
+<h2 id="分页"><a href="#分页" class="headerlink" title="分页"></a>分页</h2><p>操作系统主要有两种方法解决空间管理问题，一种是将空间分割成不同长度的分片，就像虚拟内存管理中的分段，但这个方法的主要问题是，将空间切为不同长度的分片后，空间本身会碎片化，随着时间的推移，分配空间将会更加的困难。第二种方法是，将空间分割成固定的长度分片，在虚拟内存中称为<strong>分页</strong>。</p>
+<p>分页不是将一个进程的地址空间分割成几个不同长度的逻辑段，而是分割成固定大小的单元，每个单元称为一页。我们把物理内存看成定长槽块的阵列，叫做<strong>叶帧（page frame）</strong>，每个这样的叶帧包含一个虚拟内存页。这里的问题是：<strong>如何通过页来实现虚拟内存，从而避免分段的问题？如何在运行良好的基础上尽可能的减少空间和时间开销？</strong></p>
 </section>
     <!-- Tags START -->
     
@@ -674,7 +704,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#CPU虚拟化"><span class="toc-nav-text">CPU虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#内存虚拟化"><span class="toc-nav-text">内存虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址空间"><span class="toc-nav-text">地址空间</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#内存操作API"><span class="toc-nav-text">内存操作API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址转换"><span class="toc-nav-text">地址转换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#动态重定位-基于硬件"><span class="toc-nav-text">动态重定位-基于硬件</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#分段"><span class="toc-nav-text">分段</span></a></li></ol></li></ol></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#CPU虚拟化"><span class="toc-nav-text">CPU虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程创建"><span class="toc-nav-text">进程创建</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程状态"><span class="toc-nav-text">进程状态</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#数据结构"><span class="toc-nav-text">数据结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程API"><span class="toc-nav-text">进程API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#操作系统控制权"><span class="toc-nav-text">操作系统控制权</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#受限直接执行"><span class="toc-nav-text">受限直接执行</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#1-受限的操作"><span class="toc-nav-text">1. 受限的操作</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#2-进程间切换"><span class="toc-nav-text">2. 进程间切换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#协作方式：等待系统调用"><span class="toc-nav-text">协作方式：等待系统调用</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#非协作方式：操作系统进行控制"><span class="toc-nav-text">非协作方式：操作系统进行控制</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#进程调度"><span class="toc-nav-text">进程调度</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#内存虚拟化"><span class="toc-nav-text">内存虚拟化</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址空间"><span class="toc-nav-text">地址空间</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#内存操作API"><span class="toc-nav-text">内存操作API</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#地址转换"><span class="toc-nav-text">地址转换</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#动态重定位"><span class="toc-nav-text">动态重定位</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#分段"><span class="toc-nav-text">分段</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#空闲空间管理"><span class="toc-nav-text">空闲空间管理</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#底层机制"><span class="toc-nav-text">底层机制</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#策略"><span class="toc-nav-text">策略</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#分页"><span class="toc-nav-text">分页</span></a></li></ol></li></ol>
     
   </div>
 </aside>
