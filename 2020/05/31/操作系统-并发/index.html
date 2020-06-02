@@ -165,8 +165,98 @@
     <section class="markdown-content"><p>本文为操作系统导论中关于并发部分的读书笔记。其中主要涉及多线程、锁、信号量等相关知识。</p>
 <a id="more"></a>
 
-<h1 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>经典观点是一个程序只有一个执行点（一个程序计数器，用来存放要执行的指令），但多线程程序会有多个执行点（多个程序计数器，每个都用于取指令和执行），换个角度看，每个线程类似于独立的进程，只有一点区别：他们共享地址空间，从而能够访问相同的数据。</p>
-</section>
+<h1 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>经典观点是一个程序只有一个执行点（一个程序计数器，用来存放要执行的指令），但多线程程序会有多个执行点（多个程序计数器，每个都用于取指令和执行），换个角度看，每个线程类似于独立的进程，只有一点区别：他们<strong>共享地址空间，从而能够访问相同的数据</strong>。</p>
+<p> 线程与进程之间的相同点：</p>
+<ul>
+<li>有一个程序计数器，记录程序从哪里获取指令。</li>
+<li>线程切换和进程切换也有类似的上下文切换，对于进程会将状态保存到进程控制块（Process Control Block，PCB），线程需要一个线程控制块（Thread Control Block，TCB）。</li>
+</ul>
+<p>线程与进程之间的不同点：</p>
+<ul>
+<li>在上下文切换的过程中，线程相比于进程地址空间保持不变。</li>
+<li>线程与进程之间另一个主要区别是栈，在简单的传统进程地址空间模型中，通常位于地址空间的底部；在多进程中，每个线程都有一个栈。如下图中的单线程和多线程的地址空间示例。</li>
+</ul>
+<img src="/2020/05/31/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%B9%B6%E5%8F%91/Users\shan\AppData\Roaming\Typora\typora-user-images\image-20200531212324465.png" alt="image-20200531212324465" style="zoom:30%;">
+
+<p>上图显示，两个栈跨越了进程的地址空间。因此，所有位于栈上的变量、参数、返回值和其他放在栈上的东西，被放置在有称为线程本地存储的地方，即线程相关的栈。</p>
+<p>下面的术语是关于并发代码的：</p>
+<ul>
+<li>临界区（critical section）：访问共享资源的一段代码，资源通常是一个变量或者数据结构。</li>
+<li>竞态条件（race condition）：出现在多个执行线程大致同时进入临界区，他们都视图更新共享的数据结构，导致了出现了不希望的结果。</li>
+<li>不确定性（indeterminate）：程序由一个或多个竞态条件组成，程序的输出因运行而异，具体取决于哪个线程在何时运行。这导致不确定性。</li>
+<li>互斥（mutual exclusion）：保证只有一个线程临界区，从而避免出现竞态，并产生确定的程序输出。</li>
+</ul>
+<h2 id="线程API"><a href="#线程API" class="headerlink" title="线程API"></a>线程API</h2><p><strong>创建线程</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># <span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_create</span><span class="params">( <span class="keyword">pthread_t</span> *				thread,</span></span></span><br><span class="line"><span class="function"><span class="params">                    <span class="keyword">const</span> <span class="keyword">pthread_attr_t</span> * 	attr,</span></span></span><br><span class="line"><span class="function"><span class="params">                    <span class="keyword">void</span> * 					(*start_routine)(<span class="keyword">void</span>*),</span></span></span><br><span class="line"><span class="function"><span class="params">                    <span class="keyword">void</span> * 					arg)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>该函数有4 个参数：<code>thread</code>、<code>attr</code>、<code>start_routine</code> 和<code>arg</code>。</p>
+<p>第一个参数 thread 是指向<code>pthread_t</code> 结构类型的指针，我们将利用这个结构与该线程交互，因此需要将它传入pthread_create()，以便将它初始化。</p>
+<p>第二个参数 <code>attr</code> 用于指定该线程可能具有的任何属性。</p>
+<p>第三个<code>start_routine</code>参数用于决定线程应该在哪个函数中运行，在C 中，我们把它称为一个函数指针（function pointer）。</p>
+<p>第四个参数<code>arg</code> 就是要传递给线程开始执行的函数的参数。</p>
+<p><strong>等待线程完成</strong>：</p>
+<p>调用函数 <code>pthread_join()</code> ，该函数有两个参数，第一个参数为 <code>pthread_t</code> 类型，用于指定要等待的线程。第二个参数是一个指针，指向你希望得到的返回值。</p>
+<p><strong>锁</strong>：</p>
+<p>可以提供互斥进入临界区的那些函数，这方面最基本的函数是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_mutex_lock</span><span class="params">(<span class="keyword">pthread_mutex_t</span> *mutex)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_mutex_unlock</span><span class="params">(<span class="keyword">pthread_mutex_t</span> *mutex)</span></span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>条件变量</strong>：当线程之间必须发生某种信号时，如果一个线程在等待另一个线程继续执行默写操作，条件变量就很有用，其主要函数如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_cond_wait</span><span class="params">(<span class="keyword">pthread_cond_t</span> *cond, <span class="keyword">pthread_mutex_t</span> *mutex)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_cond_signal</span><span class="params">(<span class="keyword">pthread_cond_t</span> *cond)</span></span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h1><p>通过对并发的介绍，我们看到了并发编程的一个基本问题：我们希望原子式执行一系列指令，但由于单处理器上的中断，很难做到这点。我们采用锁这种凡是，来解决这一问题。</p>
+<h2 id="锁的基本思想"><a href="#锁的基本思想" class="headerlink" title="锁的基本思想"></a>锁的基本思想</h2><p>锁就是一个变量，因此我们需要声明一个某种类型的<strong>锁变量（lock variable）</strong>，才能使用。这个锁变量保存了锁在某一时刻的状态，要么是<strong>可用的（available）</strong>，表示没有线程持有锁，要么是<strong>被占用的（acquired）</strong>，表示有一个线程持有锁，正处于临界区。我们也可以保存其他的信息，比如持有锁的线程，或者请求获取锁的线程队列，但这些信息会被隐藏起来，锁的使用者不会发现。</p>
+<p><strong>锁为程序员提供了最小程度的调度控制</strong>。我们把线程视为程序员创建的实体，但是被操作系统调度，具体方式由操作系统做出选择。锁让程序员获得一些控制权。通过给临界区加锁，可以保证临界区内只有一个线程活跃。锁将原本由操作系统调度的混乱状态变得更为可控。</p>
+<h2 id="Pthread-锁"><a href="#Pthread-锁" class="headerlink" title="Pthread 锁"></a>Pthread 锁</h2><p>POSIX 库将锁称为<strong>互斥量（mutex）</strong>，它们被用来提供线程之间的互斥。我们能用不同的锁来保护不同的变量，这样可以增加并发：不同于任何临界区都使用同一个大锁（粗粒度锁策略），通常大家会用不同的锁保护不同的数据和结构，从而允许更多的线程进入临界区（细粒度方案）。</p>
+<h2 id="实现一个锁"><a href="#实现一个锁" class="headerlink" title="实现一个锁"></a>实现一个锁</h2><p>上面对锁已经有了一定的理解，那么如何实现一个锁，需要什么样的硬件支持？什么样的操作系统的支持？</p>
+<p>各种计算机体系结构的指令集都增加了一些不同的硬件原语，我们不研究这些指令是如何实现的，只研究如何使用它们来实现像锁这样的互斥原语。我们也<br>会研究操作系统如何发展完善，支持实现成熟复杂的锁库。</p>
+<h3 id="锁的标准"><a href="#锁的标准" class="headerlink" title="锁的标准"></a>锁的标准</h3><p>为了实现锁，我们应该设立一些标准：</p>
+<ul>
+<li><strong>提供互斥（mutual exclusion）</strong>，最基本的，锁是否有效，能够阻止多个线程进入临界区。</li>
+<li><strong>公平性（fairness）</strong>，让每个竞争的线程有公平的机会抢到锁。</li>
+<li><strong>性能（performance）</strong>，使用锁之后增加的时间开销最小。</li>
+</ul>
+<h3 id="互斥的解决方案"><a href="#互斥的解决方案" class="headerlink" title="互斥的解决方案"></a>互斥的解决方案</h3><ul>
+<li><p><strong>在临界区关闭中断</strong>，这个解决方案是为但处理器系统开发的。这种方案优点是简单，缺点很多：</p>
+<ol>
+<li>一个贪婪的程序在它开始就调用lock()，从而独占处理器。</li>
+<li>不支持多处理器。</li>
+<li>关闭中断导致中断丢失，可能会导致严重的系统问题。</li>
+<li>效率太低。</li>
+</ol>
+</li>
+<li><p><strong>测试并设置指令（test-and-set instruction）</strong>，也叫做<strong>原子交换（atomic exchange）</strong>，这里实现了一种简单的锁：<strong>自旋锁（spin lock）</strong>，利用CPU周期，一直自旋，直到锁可用。在单处理器上，需要抢占式的调度器（preemptive scheduler，即不断通过时钟中断一个线程，运行其他线程）。否则自旋锁在单CPU上无法使用，因为自旋的线程永远不会放弃CPU。优点：这是一个正确的锁，一次只允许一个线程进入临界区。缺点：</p>
+<ol>
+<li>自旋锁不提供任何公平性的保证。</li>
+<li>在单CPU的情况下，性能开销十分巨大，假设一个线程持有锁进入临界区时被抢占。调度器可能会运行其他每一个线程，而其他线程都在竞争锁，都会在放弃CPU 之前，自旋一个时间片，浪费CPU 周期。但在多CPU上性能表现不错。</li>
+</ol>
+</li>
+<li><p><strong>比较并交换指令（compare-and-swap，compare-and-exchange (x86)）</strong>：实现自旋锁的情况下，与上面类似。</p>
+</li>
+<li><p><strong>链接的加载（load-link）和条件式的存储（store-conditional）</strong>：可以用这两个指令来配合使用实现并发结构。链接的加载指令和典型加载指令类似，都是从内存中取出值存入一个寄存器。关键区别来自条件式存储（store-conditional）指令，只有上一次加载的地址在期间都没有更新时，才会成功，（同时更新刚才链接的加载的地址的值）。成功时，条件存储返回1，并将 ptr 指的值更新为value。失败时，返回0，并且不会更新值。</p>
+</li>
+<li><p><strong>获取并增加指令（fetch-and-add）</strong>：他能原子的返回特定地址的旧值，并让该值自增一。我们用这个特性，实现一个ticket锁。实现如下面代码所示，此法保证所有的线程都能抢到锁。</p>
+  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># <span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"># 实现ticket锁</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">FetchAndAdd</span><span class="params">(<span class="keyword">int</span> *ptr)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> old = *ptr;</span><br><span class="line">    *ptr = old + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> old;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">lock_t</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> ticket;</span><br><span class="line">    <span class="keyword">int</span> <span class="built_in">turn</span>;</span><br><span class="line">    &#125; <span class="keyword">lock_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">lock_init</span><span class="params">(<span class="keyword">lock_t</span> *lock)</span> </span>&#123;</span><br><span class="line">    lock-&gt;ticket = <span class="number">0</span>;</span><br><span class="line">    lock-&gt;<span class="built_in">turn</span> = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">lock</span><span class="params">(<span class="keyword">lock_t</span> *lock)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> myturn = FetchAndAdd(&amp;lock-&gt;ticket);</span><br><span class="line">    <span class="keyword">while</span> (lock-&gt;<span class="built_in">turn</span> != myturn)</span><br><span class="line">        ; <span class="comment">// spin</span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">unlock</span><span class="params">(<span class="keyword">lock_t</span> *lock)</span> </span>&#123;</span><br><span class="line">    FetchAndAdd(&amp;lock-&gt;<span class="built_in">turn</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>在要自旋的时候，放弃CPU</strong>，这样可以节省CPU的开销。</p>
+</li>
+<li><p><strong>使用队列，让休眠替代自旋</strong>。将之前的测试并设置和等待队列结合，实现了一个更高性能的锁。其次，我们通过队列来控制谁会获得锁，避免饿死。</p>
+</li>
+<li><p><strong>两阶段锁（two-phase lock）</strong>，在需要快速释放锁的场景内很有用。</p>
+</li>
+</ul>
+<h2 id="基于锁的并发数据结构"><a href="#基于锁的并发数据结构" class="headerlink" title="基于锁的并发数据结构"></a>基于锁的并发数据结构</h2><p>对于特定数据结构，如何加锁才能让该结构功能正确？如何对该数据结构加锁，才能保证高性能，即并发访问？</p>
+<h3 id="计数器"><a href="#计数器" class="headerlink" title="计数器"></a>计数器</h3><p>没有同步机制的计数器代码很简单，但是线程安全的并且保持高性能的可扩展计数器已经研究多年了。</p>
+<p><strong>懒惰计数器</strong>是最近研究提出的，其基本思想是：<strong>懒惰计数器通过多个局部计数器和一个全局计数器来实现一个逻辑计数器，其中每个CPU核心有一个局部计数器</strong>。如果核心上的线程想增加计数器，那就增加它的局部计数器，为了保持全局计数器的更新，局部值会定期转移给全局计数器，方法是获取全局锁，让全局计数器加上局部计数器的值，然后把局部计数器置零。这种局部转全局的频度，取决于一个阈值，阈值越小，懒惰计数器则趋近于非扩展计数器。阈值越大，扩展性越强，全局计数器与实际计数的偏差越大。</p>
+<p>下面为懒惰计数器的基本实现：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> NUMCPUS 4</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">counter_t</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> 			global; 			<span class="comment">// global count</span></span><br><span class="line">    <span class="keyword">pthread_mutex_t</span> glock; 				<span class="comment">// global lock</span></span><br><span class="line">    <span class="keyword">int</span> 			local[NUMCPUS]; 	<span class="comment">// local count (per cpu)</span></span><br><span class="line">    <span class="keyword">pthread_mutex_t</span> llock[NUMCPUS]; 	<span class="comment">// ... and locks</span></span><br><span class="line">    <span class="keyword">int</span> 			threshold; 			<span class="comment">// update frequency</span></span><br><span class="line">&#125; <span class="keyword">counter_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// init: record threshold, init locks, init values</span></span><br><span class="line"><span class="comment">// of all local counts and global count</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">counter_t</span> *c, <span class="keyword">int</span> threshold)</span> </span>&#123;</span><br><span class="line">    c-&gt;threshold = threshold;</span><br><span class="line"></span><br><span class="line">    c-&gt;global = <span class="number">0</span>;</span><br><span class="line">    pthread_mutex_init(&amp;c-&gt;glock, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; NUMCPUS; i++) &#123;</span><br><span class="line">        c-&gt;local[i] = <span class="number">0</span>;</span><br><span class="line">        pthread_mutex_init(&amp;c-&gt;llock[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// update: usually, just grab local lock and update local amount</span></span><br><span class="line"><span class="comment">// once local count has risen by 'threshold', grab global</span></span><br><span class="line"><span class="comment">// lock and transfer local values to it</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">(<span class="keyword">counter_t</span> *c, <span class="keyword">int</span> threadID, <span class="keyword">int</span> amt)</span> </span>&#123;</span><br><span class="line">    pthread_mutex_lock(&amp;c-&gt;llock[threadID]);</span><br><span class="line">    c-&gt;local[threadID] += amt; 		<span class="comment">// assumes amt &gt; 0</span></span><br><span class="line">    <span class="keyword">if</span> (c-&gt;local[threadID] &gt;= c-&gt;threshold) &#123; 	<span class="comment">// transfer to global</span></span><br><span class="line">        pthread_mutex_lock(&amp;c-&gt;glock);</span><br><span class="line">        c-&gt;global += c-&gt;local[threadID];</span><br><span class="line">        pthread_mutex_unlock(&amp;c-&gt;glock);</span><br><span class="line">        c-&gt;local[threadID] = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    pthread_mutex_unlock(&amp;c-&gt;llock[threadID]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// get: just return global amount (which may not be perfect)</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">get</span><span class="params">(<span class="keyword">counter_t</span> *c)</span> </span>&#123;</span><br><span class="line">    pthread_mutex_lock(&amp;c-&gt;glock);</span><br><span class="line">    <span class="keyword">int</span> val = c-&gt;global;</span><br><span class="line">    pthread_mutex_unlock(&amp;c-&gt;glock);</span><br><span class="line">    <span class="keyword">return</span> val; 	<span class="comment">// only approximate!</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="并发链表"><a href="#并发链表" class="headerlink" title="并发链表"></a>并发链表</h3></section>
     <!-- Tags START -->
     
       <div class="tags">
@@ -240,7 +330,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#线程"><span class="toc-nav-text">线程</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#介绍"><span class="toc-nav-text">介绍</span></a></li></ol></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#线程"><span class="toc-nav-text">线程</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#介绍"><span class="toc-nav-text">介绍</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#线程API"><span class="toc-nav-text">线程API</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#锁"><span class="toc-nav-text">锁</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#锁的基本思想"><span class="toc-nav-text">锁的基本思想</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Pthread-锁"><span class="toc-nav-text">Pthread 锁</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#实现一个锁"><span class="toc-nav-text">实现一个锁</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#锁的标准"><span class="toc-nav-text">锁的标准</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#互斥的解决方案"><span class="toc-nav-text">互斥的解决方案</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#基于锁的并发数据结构"><span class="toc-nav-text">基于锁的并发数据结构</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#计数器"><span class="toc-nav-text">计数器</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#并发链表"><span class="toc-nav-text">并发链表</span></a></li></ol></li></ol></li></ol>
     
   </div>
 </aside>
