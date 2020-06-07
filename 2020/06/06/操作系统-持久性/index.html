@@ -229,7 +229,96 @@
 <h3 id="SSTF"><a href="#SSTF" class="headerlink" title="SSTF"></a>SSTF</h3><p>SSTF ：一种早期的磁盘调度方法，被称为<strong>最短寻道时间优先</strong>，Shortest-Seek-Time-First。SSTF 按磁道对I/O 请求队列排序，选择在最近磁道上的请求先完成。</p>
 <h3 id="电梯：SCAN"><a href="#电梯：SCAN" class="headerlink" title="电梯：SCAN"></a>电梯：SCAN</h3><p>简单地以跨越磁道的顺序来服务磁盘请求。我们将一次跨越磁盘称为扫一遍。因此，如果请求的块所属的磁道在这次扫一遍中已经服务过了，它就不会立即处<br>理，而是排队等待下次扫一遍。</p>
 <h3 id="SPTF"><a href="#SPTF" class="headerlink" title="SPTF"></a>SPTF</h3><p><strong>最短定位时间优先调度</strong>，Shortest Positioning Time First，SPTF，有时也称为最短接入时间优先，Shortest Access Time First，SATF。</p>
-<h1 id="廉价冗余磁盘阵列"><a href="#廉价冗余磁盘阵列" class="headerlink" title="廉价冗余磁盘阵列"></a>廉价冗余磁盘阵列</h1></section>
+<h1 id="廉价冗余磁盘阵列"><a href="#廉价冗余磁盘阵列" class="headerlink" title="廉价冗余磁盘阵列"></a>廉价冗余磁盘阵列</h1><p>在整个计算机系统中，I/O操作是很慢的，它会成为整个系统的瓶颈。那么我们如何构建一个大型的、快速的、可靠的存储系统？</p>
+<p>这里用的主要手段是<strong>廉价冗余磁盘阵列</strong>：Redundant Array of Inexpensive Disk，更多时候称为<strong>RAID</strong>，这种技术使用多个磁盘一起构建更大、更快、更可靠的磁盘系统。从外部来看，RAID看起来像是一个磁盘，一组可以读取或者写入的块。在内部，它是由多个磁盘、内存以及一个或多个处理器来管理的系统。</p>
+<p>RAID与单个磁盘相比，有许多的优点：</p>
+<ul>
+<li>提高性能，并行使用多个磁盘可以大大加快I/O时间；</li>
+<li>高容量，大型数据集需要 大型磁盘；</li>
+<li>提高可靠性，在多个磁盘上传输数据会使数据易受到单个磁盘丢失的影响。</li>
+</ul>
+<p><strong>映射问题</strong>：这个问题出现在所有的RAID阵列中，简单的说，就是<strong>给定一个逻辑块来读或者写，RAID如何确切知道要访问哪个物理磁盘和偏移量？</strong></p>
+<p><strong>RAID 一致性问题</strong>：一些特殊情况（如掉电）会导致数据块在连个副本中不一致，其一般解决方案是：使用某种<strong>预写日志（write-ahead log）</strong>，在做之前首先记录RAID 将要执行的操作（即用某个数据更新两个磁盘）。通过采取这种方法，我们可以确保在发生崩溃时，会发生正确的事情。通过运行一个恢复（recovery）过程，将所有未完成的事务重新在RAID 上执行，我们可以确保两个镜像副本（在RAID-1 情况下）同步。</p>
+<p>根据容量、可靠性、性能三个方面评估 RAID 设计：</p>
+<ul>
+<li><strong>RAID 0级</strong>，条带化，没有冗余，以轮转方式将磁盘阵列的块分布在磁盘上。这种方法的目的是在对数组的连续块进行请求时，从阵列中获取最大的并行性。其容量和性能都是顶级的，但是任何磁盘故障都会导致有用数据丢失。</li>
+<li><strong>RAID 1级</strong>，镜像，只需生成系统中每个块的多个副本，每个副本单独放在一个单独的磁盘上，其允许磁盘故障，这个其镜像级别有关。容量只有有用容量的1/n，其顺序读取和写入的性能只有最大带宽的1/n；其随机读取的性能为完整的带宽，随机写入的性能为1/n;<ul>
+<li>RAID-10使用镜像对其生成副本，使用条带化增强性能与容量。</li>
+<li>RAID-01包含两个大型条带化阵列，然后对其进行镜像。</li>
+</ul>
+</li>
+<li><strong>RAID 4级</strong>，基于奇偶校验的冗余，这种方式试图以减小的容量解决副本问题，对条带中每块的每一位进行奇偶校验，填入对应的位置，这么做的代价是性能。其容量为N(磁盘数) - 1；其允许一个磁盘故障；其连续读取性能为 N - 1，顺序写入的性能为N-1(全条带写入)，随机读取的性能为N-1，小的随机写入性能为R/2；</li>
+<li><strong>RAID 5级</strong>，旋转奇偶校验，每个条带奇偶校验都在磁盘上旋转，以消除RAID-4的奇偶校验盘的瓶颈。性能基本与RAID-4相同，其随机读取稍微好一点（可以利用所有磁盘），随机写入性能明显提高，因为它能够跨请求进行并行处理，为NR/4。因为它与RAID-4 基本相同，部分情况完全好于RAID-4，故基本上已经取代了RAID-4。</li>
+</ul>
+<p>其性能比较如下表所示，其中假设共有N块磁盘，连续工作负载下以S MB/s 传输数据，并且在随机工作负载下以R MB/s 传输数据：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>RAID-0</th>
+<th>RAID-1</th>
+<th>RAID-4</th>
+<th>RAID-5</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>容量</td>
+<td>N</td>
+<td>N/2</td>
+<td>N-1</td>
+<td>N-1</td>
+</tr>
+<tr>
+<td>可靠性</td>
+<td>0</td>
+<td>1(肯定) / N/2(运气)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>顺序读</td>
+<td>N * S</td>
+<td>N/2 * S</td>
+<td>(N -1) * S</td>
+<td>(N -1) * S</td>
+</tr>
+<tr>
+<td>顺序写</td>
+<td>N * S</td>
+<td>N/2 * S</td>
+<td>(N -1) * S</td>
+<td>(N -1) * S</td>
+</tr>
+<tr>
+<td>随机读</td>
+<td>N * R</td>
+<td>N * R</td>
+<td>(N -1) * R</td>
+<td>N * R</td>
+</tr>
+<tr>
+<td>随机写</td>
+<td>N * R</td>
+<td>N/2 * R</td>
+<td>1/2 * R</td>
+<td>N/4 * R</td>
+</tr>
+<tr>
+<td>读延迟</td>
+<td>T</td>
+<td>T</td>
+<td>T</td>
+<td>T</td>
+</tr>
+<tr>
+<td>写延迟</td>
+<td>T</td>
+<td>T</td>
+<td>2T</td>
+<td>2T</td>
+</tr>
+</tbody></table>
+<h1 id="文件和目录"><a href="#文件和目录" class="headerlink" title="文件和目录"></a>文件和目录</h1></section>
     <!-- Tags START -->
     
       <div class="tags">
@@ -318,7 +407,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#I-O设备"><span class="toc-nav-text">I&#x2F;O设备</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#系统架构"><span class="toc-nav-text">系统架构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#标准设备"><span class="toc-nav-text">标准设备</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#标准协议"><span class="toc-nav-text">标准协议</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#利用中断减少CPU开销"><span class="toc-nav-text">利用中断减少CPU开销</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#利用DMA进行高效的数据传送"><span class="toc-nav-text">利用DMA进行高效的数据传送</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#设备交互的方法"><span class="toc-nav-text">设备交互的方法</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#将设备纳入操作系统"><span class="toc-nav-text">将设备纳入操作系统</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#磁盘驱动器"><span class="toc-nav-text">磁盘驱动器</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#接口"><span class="toc-nav-text">接口</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#基本几何形状"><span class="toc-nav-text">基本几何形状</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#I-O-时间"><span class="toc-nav-text">I&#x2F;O 时间</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#磁盘调度"><span class="toc-nav-text">磁盘调度</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#SSTF"><span class="toc-nav-text">SSTF</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#电梯：SCAN"><span class="toc-nav-text">电梯：SCAN</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#SPTF"><span class="toc-nav-text">SPTF</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#廉价冗余磁盘阵列"><span class="toc-nav-text">廉价冗余磁盘阵列</span></a></li></ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#I-O设备"><span class="toc-nav-text">I&#x2F;O设备</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#系统架构"><span class="toc-nav-text">系统架构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#标准设备"><span class="toc-nav-text">标准设备</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#标准协议"><span class="toc-nav-text">标准协议</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#利用中断减少CPU开销"><span class="toc-nav-text">利用中断减少CPU开销</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#利用DMA进行高效的数据传送"><span class="toc-nav-text">利用DMA进行高效的数据传送</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#设备交互的方法"><span class="toc-nav-text">设备交互的方法</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#将设备纳入操作系统"><span class="toc-nav-text">将设备纳入操作系统</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#磁盘驱动器"><span class="toc-nav-text">磁盘驱动器</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#接口"><span class="toc-nav-text">接口</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#基本几何形状"><span class="toc-nav-text">基本几何形状</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#I-O-时间"><span class="toc-nav-text">I&#x2F;O 时间</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#磁盘调度"><span class="toc-nav-text">磁盘调度</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#SSTF"><span class="toc-nav-text">SSTF</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#电梯：SCAN"><span class="toc-nav-text">电梯：SCAN</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#SPTF"><span class="toc-nav-text">SPTF</span></a></li></ol></li></ol></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#廉价冗余磁盘阵列"><span class="toc-nav-text">廉价冗余磁盘阵列</span></a></li><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#文件和目录"><span class="toc-nav-text">文件和目录</span></a></li></ol>
     
   </div>
 </aside>
