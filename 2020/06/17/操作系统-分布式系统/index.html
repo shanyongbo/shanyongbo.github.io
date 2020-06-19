@@ -162,7 +162,66 @@
 <main class="app-body flex-box">
   <!-- Article START -->
   <article class="post-article">
-    <section class="markdown-content"></section>
+    <section class="markdown-content"><p>本文为操作系统导论中关于分布式部分的读书笔记。</p>
+<a id="more"></a>
+
+<h1 id="分布式系统"><a href="#分布式系统" class="headerlink" title="分布式系统"></a>分布式系统</h1><p>在当今的构建分布式系统的过程中，我们关注的主要问题是<strong>如何在组件故障时仍能保证系统的工作？</strong></p>
+<p>几乎在所有的情况下，<strong>通信本身都不能被视为可靠的</strong>，位讹误、关闭或无效的链接和机器，以及缺少传入数据包的缓冲区空间，都会导致相同的结果：数据包有时无法到达目的地。为了在这种不可靠的网络上建立可靠的服务，我们必须考虑能够应对数据包丢失的技术。</p>
+<p>分布式系统存在的重要问题：</p>
+<ul>
+<li>性能</li>
+<li>安全</li>
+<li>通信</li>
+</ul>
+<h2 id="通信基础"><a href="#通信基础" class="headerlink" title="通信基础"></a>通信基础</h2><p>现代网络的核心原则是：<strong>通信基本是不可靠的</strong>。无论是在关于Internet，还是在局域高速网络中，数据报都会经常丢失、损坏或者无法到达目的地。</p>
+<p>其丢包的原因右很多：</p>
+<ul>
+<li>在传输过程中，由于电气或者其他类似的原因，其某些位会被翻转。</li>
+<li>系统中某个元素会以某种方式损坏，或其他方式无法工作（如数据包路由器，或远程主机）。</li>
+<li>网络电缆被意外切断。</li>
+<li>由于网络交换机、路由器或者中端节点内缺少缓冲，从而导致包丢失。</li>
+</ul>
+<p>即使我们保证所有链路都能正常工作，并且系统中的所有组件都按预期启动并运行，仍可能出现丢包现象，如路由器缓冲不足，导致路由器选择丢弃数据包，那么该怎么处理丢包现象。</p>
+<h2 id="不可靠的通信层"><a href="#不可靠的通信层" class="headerlink" title="不可靠的通信层"></a>不可靠的通信层</h2><p>简单的方法是<strong>不对丢包进行处理</strong>。由于某些应用程序知道如何处理丢包，因此让它们用基本的不可靠消息传递层进行通信有时是很有用的，这是端到端的论点。如<strong>UDP</strong>，它是一个不可靠通信层的例子，如果遇到丢包，就会遇到数据布包无法到达的情况，但UDP中包含校验和，可以检测某些数据包的损坏。</p>
+<h2 id="可靠的通信层"><a href="#可靠的通信层" class="headerlink" title="可靠的通信层"></a>可靠的通信层</h2><p>为了构建可靠的通信层，我们采取了一些新的措施来处理数据包丢失。</p>
+<p>如何让发送方知道接收方实际接收到了消息？使用的技术是<strong>确认（acknowledge）</strong>，简称ack。发送方向接收方发送消息，接收方然后发回短消息确认收到。当发送发收到该消息的确认时，可以放心接收方收到了消息，但是，如果没有收到确认时，通过<strong>超时（timeout）</strong>，发送方断定该消息已经丢失，然后<strong>重新发送（retry）</strong>。这种称为<strong>超时/重试机制（timeout/retry）</strong>。</p>
+<p>同时我们为了保证不会收到相同的消息，还希望接收方每个消息<strong>只接收一次（exactly once）</strong>。为了让接收方能够检测重复消息传输，发送方必须以某种独特的方式标识每个消息，并且接收方需要以某种方式来追踪它是否已经看到过每个消息。当接收方看到重复传输时，他只是简单的响应消息，但不会将消息传递给接收数据的应用程序。如为每条顺序生成唯一ID，但成本非常高。或者利用一种叫<strong>顺序计数器（sequence counter）</strong>的机制。如 TCP/IP 协议。</p>
+<h2 id="通信抽象"><a href="#通信抽象" class="headerlink" title="通信抽象"></a>通信抽象</h2><p>构建分布式系统时，应该使用什么抽象通信？</p>
+<p><strong>分布式共享内存（Distribution Shared Memory，DSM）系统</strong>使不同的机器上的进程能够共享一个大的虚拟地址空间。这种抽象将分布式计算变成貌似多线程应用程序，唯一的区别是这些线程运行在不同的机器上。其最大的问题是，如何处理故障和访问内存的性能。</p>
+<p><strong>远程过程调用（Remote Procedure Call，RPC）</strong>是编程语言方面的抽象，其目标是：使在远程机器上执行代码的过程像调用本地函数一样简单直接。因此对于客户端来说，进行一个过程调用，并在一段时间后返回结果。服务器只是定义了一些它希望导出的例程。其与由RPC系统处理，RPC系统通常有两部分组成：<strong>存根生成器</strong>（stub generator，或称为协议编译器，protocol compiler）和<strong>运行时库</strong>（run-time library）。</p>
+<h3 id="存根生成器"><a href="#存根生成器" class="headerlink" title="存根生成器"></a>存根生成器</h3><p>其工作十分简单：通过自动化，消除将函数参数和结果打包成消息的痛苦，其好处是通过设计避免了手工编写此类代码时出现的简单错误。其也可以优化此类代码，从而提高性能。</p>
+<p>这种编译器的输入就是服务器希望导出到客户端的一组调用。从概念上讲，它可能就像这样简单：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">interface &#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">func1</span><span class="params">(<span class="keyword">int</span> arg1)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">func2</span><span class="params">(<span class="keyword">int</span> arg1, <span class="keyword">int</span> arg2)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>存根生成器接受这样的接口，并生成一些不同的代码片段。对于客户端，生成客户端存根（client stub），其中包含接口中指定的每个函数。希望使用此RPC 服务的客户端程序将链接此客户端存根，调用它以进行RPC。</p>
+<p>在内部，客户端存根中的每个函数都执行远程过程调用所需的所有工作。对于客户端，代码只是作为函数调用出现。在内部，func1()的客户端存根中的代码执行此操作：</p>
+<ul>
+<li>创建消息缓冲区</li>
+<li>将所有需要的信息打包到消息缓冲区中。</li>
+<li>将消息发送到目标RPC服务器上</li>
+<li>等待回复</li>
+<li>解包返回代码和其他参数</li>
+<li>返回调用者</li>
+<li>解包消息</li>
+<li>调用实际函数</li>
+<li>打包结果</li>
+<li>发送回复</li>
+</ul>
+<p>其中有一些重要的问题需要考虑：</p>
+<ol>
+<li>复杂的参数</li>
+<li>关于并发性服务器组织方式</li>
+</ol>
+<h3 id="运行时库"><a href="#运行时库" class="headerlink" title="运行时库"></a>运行时库</h3><p>构建此类运行时层主要的挑战是：</p>
+<ul>
+<li>如何找到远程服务，客户端必须知道运行所需RPC 服务的机器的主机名或IP 地址，以及它正在使用的端口号。然后，协议套件必须提供一种机制，将数据包从系统中的任何其他机器路由到特定地址。</li>
+<li>RPC构建的协议，一般基于UDP上，这样可以实现更加高效的RPC层。</li>
+<li>远程调用耗时较长问题</li>
+<li>大参数的过程调用</li>
+<li>字节序问题，大端和小端</li>
+<li>是否向客户端暴露通信的异步性质，从而实现一些性能优化。</li>
+</ul>
+</section>
     <!-- Tags START -->
     
       <div class="tags">
@@ -236,7 +295,7 @@
   <div class="toc-main">
     <strong class="toc-title">Catalog</strong>
     
-      <ol class="nav">none</ol>
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-1"><a class="toc-nav-link" href="#分布式系统"><span class="toc-nav-text">分布式系统</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#通信基础"><span class="toc-nav-text">通信基础</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#不可靠的通信层"><span class="toc-nav-text">不可靠的通信层</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#可靠的通信层"><span class="toc-nav-text">可靠的通信层</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#通信抽象"><span class="toc-nav-text">通信抽象</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#存根生成器"><span class="toc-nav-text">存根生成器</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#运行时库"><span class="toc-nav-text">运行时库</span></a></li></ol></li></ol></li></ol>
     
   </div>
 </aside>
