@@ -169,7 +169,7 @@
 <li><strong>跳表</strong>：其本质上是一个二维链表，链接的方向向前或者向下。表头在左上角，它是跳表的唯一入口。既能高效搜索，又避免了上述的缺点。</li>
 </ul>
 <h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>跳表示例如下图所示：</p>
-<img src="/2020/06/22/2020-06-22-%E8%B7%B3%E8%A1%A8/Users\shan\Desktop\my_blog\hexo_blog\source\_posts\2020-06-22-跳表\跳表示例.png" alt="image-20200624204951432" style="zoom: 80%;">
+<img src="/2020/06/22/2020-06-22-%E8%B7%B3%E8%A1%A8/2020-06-22-跳表\跳表示例.png" alt="image-20200624204951432" style="zoom: 80%;">
 
 <p>由上图可知，跳表是由节点组成，分为<strong>头节点</strong>和<strong>数据节点</strong>，头节点保存了down和next的引用，数据节点每个节点存有一个<strong>键</strong>及其关联的<strong>值</strong>，每个节点有两个向外的引用，分别为down和next，down指向下一层的头节点，next引用指向数据节点的链表。由数据节点构成的纵列称为<strong>塔</strong>，塔是由数据节点中的down引用连起来的。跳表水平方向是由一系列节点集合组成的有序链表，其链表的名称为其<strong>层数</strong>，0层包含了所有数据的节点，层数越高，包含的节点越少，其有助于提高搜索效率。</p>
 <h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>对跳表的实现主要分为节点的实现，相关方法的实现。</p>
