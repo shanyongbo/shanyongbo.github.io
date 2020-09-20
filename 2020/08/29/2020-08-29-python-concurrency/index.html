@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="shan&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      Python concurrency | shan
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>shan</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>Python concurrency</h2>
+  <p class="post-date">2020-08-29</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><p>If you’ve heard lots of talk about <code>asyncio</code> <a href="https://realpython.com/python37-new-features/" target="_blank" rel="noopener">being added to Python</a> but are curious how it compares to other concurrency methods or are wondering what concurrency is and how it might speed up your program, you’ve come to the right place.</p>
+<p><strong>In this article, you’ll learn the following:</strong></p>
+<ul>
+<li>What <strong>concurrency</strong> is</li>
+<li>What <strong>parallelism</strong> is</li>
+<li>How some of <strong>Python’s concurrency methods</strong> compare, including <code>threading</code>, <code>asyncio</code>, and <code>multiprocessing</code></li>
+<li><strong>When to use concurrency</strong> in your program and which module to use</li>
+</ul>
+<p>This article assumes that you have a basic understanding of Python and that you’re using at least version 3.6 to run the examples. You can download the examples from the <a href="https://github.com/realpython/materials/tree/master/concurrency-overview" target="_blank" rel="noopener"><em>Real Python</em> GitHub repo</a>.</p>
+<p><strong>Free Bonus:</strong> <a href="https://realpython.com/bonus/python-mastery-course/" target="_blank" rel="noopener">5 Thoughts On Python Mastery</a>, a free course for Python developers that shows you the roadmap and the mindset you’ll need to take your Python skills to the next level.</p>
+<p> <strong>Take the Quiz:</strong> Test your knowledge with our interactive “Python Concurrency” quiz. Upon completion you will receive a score so you can track your learning progress over time:</p>
+<p><a href="https://realpython.com/quizzes/python-concurrency/" target="_blank" rel="noopener">Take the Quiz »</a></p>
+<h2 id="What-Is-Concurrency"><a href="#What-Is-Concurrency" class="headerlink" title="What Is Concurrency?"></a>What Is Concurrency?</h2><p><strong>并发的定义是同时发生</strong>。在Python中，同时发生的事物通过不同的名称（线程，任务，进程）进行调用，但在较高层次上，它们都描述为按顺序运行的指令序列。</p>
+<p>我喜欢将它们视为不同的思路。每个程序都可以在某些时候停止，然后切换到另一个CPU来处理它们。所有的状态都被保存了下来，因此可以在中断的地方重新启动。</p>
+<p>你可能想知道为什么Python在同一概念上使用不同的词。事实证明，只有从较高的角度来看，线程，任务和进程才是相同的。一旦你开始研究细节，它们都代表了不同的事物。通过这些示例，你将了解有关它们更多的区别。</p>
+<p>现在，让我们谈谈该定义同时的部分。你必须谨慎一些，因为当你深入细节时，实际上只有<code>multiprocessing</code>实际上同时使用了这些不同的思路。<code>Threading</code>和<code>asyncio</code>都是在单个处理器上运行，因此一次只能运行一个。他们只是巧妙地找到了轮流加快总体流程的方法。即使他们不会同时使用这些不同的思路，我们仍然称其为并发。</p>
+<p>线程或任务轮流的方式是<code>threading</code>和<code>asyncio</code>之间的最大区别。在<code>threading</code>中，操作系统实际上了解每个线程，并且可以随时中断它以开始运行另一个线程。这被称为<a href="https://en.wikipedia.org/wiki/Preemption_(computing)#Preemptive_multitasking" target="_blank" rel="noopener">抢先式多任务处理</a>，因为操作系统可以抢占你的线程来进行切换。</p>
+<p>抢先式多任务处理非常方便，因为线程中的代码不需要执行任何操作即可进行切换。由于<strong>随时</strong>这一短语，这也可能很困难。这种切换可能发生在单个Python语句的中间，甚至是诸如<code>x = x + 1</code>之类的语句。</p>
+<p>另一方面，<code>asyncio</code>使用<a href="https://en.wikipedia.org/wiki/Cooperative_multitasking" target="_blank" rel="noopener">合作多任务</a>。这些任务必须通过宣布何时准备好退出来进行协作。这意味着任务中的代码必须稍作更改才能实现。</p>
+<p>预先进行此额外工作的好处是，你始终知道任务将在哪里被换出（swapped out）。除非标记了该语句，否则它不会在Python语句的中间被换出。稍后你将看到这如何简化你的设计部分。</p>
+<h2 id="What-Is-Parallelism"><a href="#What-Is-Parallelism" class="headerlink" title="What Is Parallelism?"></a>What Is Parallelism?</h2><p>到目前为止，你已经研究了在单个处理器上的并发性。酷炫的新笔记本电脑拥有的这些更多的CPU核心怎么办？你如何利用它们？<code>multiprocessing</code>就是答案。</p>
+<p>通过<code>multiprocessing</code>，Python创建了新的进程。尽管从技术上来说，它们通常被定义为资源的集合，其中的资源包括内存，文件句柄之类的东西，但是这里的过程几乎可以视为完全不同的程序。每个进程都在自己的Python解释器中运行。</p>
+<p>由于它们是不同的进程，因此多进程程序中的<strong>每个进程都可以在不同的核心上运行</strong>。在不同的核心上运行意味着它们实际上可以同时运行。这样做会带来一些复杂性，但是Python在大多数情况下都可以让你更加流畅的使用他们。</p>
+<p>现在你已经了解了并行和并发是什么，让我们回顾一下它们之间的差异，然后我们来看一下它们为何有用的原因：</p>
+<table>
+<thead>
+<tr>
+<th>Concurrency Type</th>
+<th>Switching Decision</th>
+<th>Number of Processors</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pre-emptive multitasking (<code>threading</code>)</td>
+<td>The operating system decides when to switch tasks external to Python.</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Cooperative multitasking (<code>asyncio</code>)</td>
+<td>The tasks decide when to give up control.</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Multiprocessing (<code>multiprocessing</code>)</td>
+<td>The processes all run at the same time on different processors.</td>
+<td>Many</td>
+</tr>
+</tbody></table>
+<p>这些并发类型中的每一个都是有用的。让我们来看看它们可以帮助你加快程序速度的程序类型。</p>
+<h2 id="When-Is-Concurrency-Useful"><a href="#When-Is-Concurrency-Useful" class="headerlink" title="When Is Concurrency Useful?"></a>When Is Concurrency Useful?</h2><p>并发可以对两种类型的问题产生很大的影响。这些通常称为CPU-bound 和I/O-bound。</p>
+<p>I/O-bound问题会导致你的程序运行缓慢，因为它经常必须等待某些外部资源的输入/输出（I/O）。当你的程序使用比CPU慢得多的东西时，它们就会经常出现。</p>
+<p>比CPU慢的例子有很多，但是值得庆幸的是你的程序并未与其中的大多数交互。你的程序最常与之交互的缓慢事物是文件系统和网络连接。</p>
+<p>让我们看看它是什么样子：</p>
+<img src="\2020-08-29-python-concurrency\IOBound.4810a888b457.png" alt="Timing Diagram of an I/O Bound Program" style="zoom:80%;">
+
+<p>在上图中，蓝色框显示了程序执行工作的时间，红色框是等待I/O操作完成所花费的时间。此图未按比例绘制，因为Internet上的请求所花的时间可能比CPU指令大几个数量级，因此你的程序最终可能会花费大部分时间等待。这是你的浏览器大部分时间都在执行的操作。</p>
+<p>另一方面，有些程序类可以进行大量计算，而无需与请求网络或访问文件。这些是CPU-bound 的程序，因为限制程序速度的资源是CPU，而不是网络或文件系统。</p>
+<p>这是 CPU-bound 程序的对应图：</p>
+<img src="\2020-08-29-python-concurrency\CPUBound.d2d32cb2626c.png" alt="Timing Diagram of an CPU Bound Program" style="zoom:80%;">
+
+<p>在处理下一节中的示例时，你会发现不同形式的并发在 CPU-bound 和 I/O-bound 的程序中表现不尽相同。在你的程序中增加并发可能会增加代码和复杂性，因此你需要确定是否值得付出额外的工作来提高速度。在本文末尾，你应该有足够的信息来开始做出该决定。</p>
+<p>以下是简要说明，以阐明这一概念：</p>
+<table>
+<thead>
+<tr>
+<th>I/O-Bound Process</th>
+<th>CPU-Bound Process</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Your program spends most of its time talking to a slow device, like a network connection, a hard drive, or a printer.</td>
+<td>You program spends most of its time doing CPU operations.</td>
+</tr>
+<tr>
+<td>Speeding it up involves overlapping the times spent waiting for these devices.</td>
+<td>Speeding it up involves finding ways to do more computations in the same amount of time.</td>
+</tr>
+</tbody></table>
+<p>你将首先查看I/O-bound程序。然后，你将看到一些处理CPU-bound程序的代码。</p>
+<h2 id="How-to-Speed-Up-an-I-O-Bound-Program"><a href="#How-to-Speed-Up-an-I-O-Bound-Program" class="headerlink" title="How to Speed Up an I/O-Bound Program"></a>How to Speed Up an I/O-Bound Program</h2><p>让我们从I/O-bound程序和一个常见问题开始：通过网络下载内容。在我们的示例中，你将从几个站点下载网页，但实际上可能是任何网络流量。可视化和设置网页更加容易。</p>
+<h3 id="Synchronous-Version"><a href="#Synchronous-Version" class="headerlink" title="Synchronous Version"></a>Synchronous Version</h3><p>我们将从该任务的非并发版本开始。请注意，该程序需要<a href="http://docs.python-requests.org/en/master/" target="_blank" rel="noopener"><code>requests</code></a>模块。你应该先运行<a href="https://realpython.com/python-virtual-environments-a-primer/" target="_blank" rel="noopener">virtualenv</a>，然后再运行<code>pip install requests</code>。此版本完全不使用并发：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_site</span><span class="params">(url, session)</span>:</span></span><br><span class="line">    <span class="keyword">with</span> session.get(url) <span class="keyword">as</span> response:</span><br><span class="line">        print(<span class="string">f"Read <span class="subst">&#123;len(response.content)&#125;</span> from <span class="subst">&#123;url&#125;</span>"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_all_sites</span><span class="params">(sites)</span>:</span></span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        <span class="keyword">for</span> url <span class="keyword">in</span> sites:</span><br><span class="line">            download_site(url, session)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    sites = [</span><br><span class="line">        <span class="string">"https://www.jython.org"</span>,</span><br><span class="line">        <span class="string">"http://olympus.realpython.org/dice"</span>,</span><br><span class="line">    ] * <span class="number">80</span></span><br><span class="line">    start_time = time.time()</span><br><span class="line">    download_all_sites(sites)</span><br><span class="line">    duration = time.time() - start_time</span><br><span class="line">    print(<span class="string">f"Downloaded <span class="subst">&#123;len(sites)&#125;</span> in <span class="subst">&#123;duration&#125;</span> seconds"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>如你所见，这是一个相当短的程序。 <code>download_site()</code>只是从URL下载内容并打印大小。要指出的一件事是，我们正在使用来自<code>requests</code>的<a href="https://2.python-requests.org/en/master/user/advanced/#id1" target="_blank" rel="noopener"><code>Session</code></a>对象。</p>
+<p>可以直接从<code>requests</code>中直接使用<code>get()</code>，但是创建<code>Session</code>对象可以使<code>requests</code>做一些花哨的网络技巧并真正加快速度。</p>
+<p><code>download_all_sites()</code>创建<code>Session</code>，然后遍历站点列表，依次下载每个站点。最后，它打印出了此过程花费的时间，因此你可以看到在以下示例中并发对我们的帮助。</p>
+<p>该程序的处理图与上一节中的I/O-bound图非常相似。 </p>
+<p><strong>注意：</strong>网络流量取决于许多因素，每秒之间可能会有所不同。我已经看到由于网络问题，这些测试的次数从一次运行到另一次运行翻了一番。 </p>
+<p><strong>为什么同步版本会摇摇</strong></p>
+<p>这个版本的代码的好处是编写和调试相对容易。思考起来也更加简单明了。贯穿其中只有一条思路，因此你可以预测下一步是什么及其行为方式。 </p>
+<p><strong>同步版本存在的问题</strong></p>
+<p>这里最大的问题是，与我们提供的其他解决方案相比，它相对较慢。这是最终输出在我的计算机上给出的示例：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./io_non_concurrent.py</span></span><br><span class="line">   [most output skipped]</span><br><span class="line">Downloaded 160 in 14.289619207382202 seconds</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>你的结果可能会有很大差异。运行此脚本时，我看到时间从14.2秒到21.9秒不等。在本文中，我以最快的速度运行了三个时间。两种方法之间的差异仍然很明显。</p>
+<p>但是，变慢并不总是一个大问题。如果你正在运行的程序使用同步版本仅需2秒钟，而很少运行，则可能不值得增加并发性。你可以在这里停下来。</p>
+<p>如果你的程序经常运行该怎么办？如果要花几个小时运行怎么办？让我们通过使用<code>threading</code>重写该程序来进行并发。</p>
+<h3 id="threading-Version"><a href="#threading-Version" class="headerlink" title="threading Version"></a><code>threading</code> Version</h3><p>你可能已经猜到了，编写线程程序会花费更多的精力。但是对于简单的案例来说，你会花费非常少的额外精力。这是带有<code>threading</code>的相同程序的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> concurrent.futures</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">thread_local = threading.local()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_session</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> hasattr(thread_local, <span class="string">"session"</span>):</span><br><span class="line">        thread_local.session = requests.Session()</span><br><span class="line">    <span class="keyword">return</span> thread_local.session</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_site</span><span class="params">(url)</span>:</span></span><br><span class="line">    session = get_session()</span><br><span class="line">    <span class="keyword">with</span> session.get(url) <span class="keyword">as</span> response:</span><br><span class="line">        print(<span class="string">f"Read <span class="subst">&#123;len(response.content)&#125;</span> from <span class="subst">&#123;url&#125;</span>"</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">download_all_sites</span><span class="params">(sites)</span>:</span></span><br><span class="line">    <span class="keyword">with</span> concurrent.futures.ThreadPoolExecutor(max_workers=<span class="number">5</span>) <span class="keyword">as</span> executor:</span><br><span class="line">        executor.map(download_site, sites)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    sites = [</span><br><span class="line">        <span class="string">"https://www.jython.org"</span>,</span><br><span class="line">        <span class="string">"http://olympus.realpython.org/dice"</span>,</span><br><span class="line">    ] * <span class="number">80</span></span><br><span class="line">    start_time = time.time()</span><br><span class="line">    download_all_sites(sites)</span><br><span class="line">    duration = time.time() - start_time</span><br><span class="line">    print(<span class="string">f"Downloaded <span class="subst">&#123;len(sites)&#125;</span> in <span class="subst">&#123;duration&#125;</span> seconds"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当你添加<code>threading</code>模块时，整体结构是相同的，只需要进行一些更改即可。 <code>download_all_sites()</code>已从每个站点调用一次的函数变为更复杂的结构。</p>
+<p>在此版本中，你正在创建一个<code>ThreadPoolExecutor</code>，这看起来很复杂。让我们来分解一下：<code>ThreadPoolExecutor</code> = <code>Thread</code> +<code>Pool</code> +<code>Executor</code>。</p>
+<p>你已经了解<code>Thread</code>部分。这只是我们前面提到的思路。<code>Pool</code>部分开始变得有趣起来。该对象将创建一个线程池，每个线程可以并发的运行。最后，<code>Executor</code>是控制池中每个线程运行方式和时间的部分。它将在池中执行请求。</p>
+<p>有用的是，标准库将<code>ThreadPoolExecutor</code>实现为上下文管理器，因此你可以使用<code>with</code>语法来管理创建和释放<code>Thread pool</code>。</p>
+<p>一旦有了<code>ThreadPoolExecutor</code>，就可以方便的使用它的<code>.map()</code>方法。此方法是在列表中的每个站点上运行的功能。最重要的是，它使用其管理的线程池自动并发的运行它们。</p>
+<p>那些来自其他语言甚至Python 2的人可能想知道普通对象和函数在哪里，这些对象和函数可以管理处理<code>threading</code>时常用的细节，例如<code>Thread.start()</code>， <code>Thread.join()</code>和<code>Queue</code>。</p>
+<p>这些都仍然存在，你可以使用它们来实现对线程运行方式的细粒度控制。但是，从Python 3.2开始，标准库添加了一个称为<code>Executors</code>的更高级别的抽象，如果你不需要细粒度的控件，它可以为你管理许多细节。</p>
+<p>我们的示例中另一个有趣的变化是，每个线程都需要创建自己的<code>requests.Session()</code>对象。当你查看<code>requests</code>的文档时，如阅读<a href="https://github.com/requests/requests/issues/2766" target="_blank" rel="noopener">this issue</a>时，你似乎很清楚每个线程需要一个单独的会话。</p>
+<p>这是<code>threading</code>有趣且棘手的问题之一。因为操作系统控制你的任务何时中断以及另一个任务何时开始，所以线程之间共享的任何数据都需要受到保护，或者是线程安全的。不幸的是<code>requests.Session()</code>不是线程安全的。</p>
+<p>根据数据是什么以及如何使用数据，有几种策略可以使数据访问成为线程安全的。其中之一是使用线程安全的数据结构，例如Python的<code>queue</code>模块中的<code>Queue</code>。</p>
+<p>这些对象使用低级原语，例如<a href="https://docs.python.org/2/library/threading.html#lock-objects" target="_blank" rel="noopener"><code>threading.Lock</code></a>，以确保同时只有一个线程可以访问代码块或内存。你是通过<code>ThreadPoolExecutor</code>对象间接使用此策略的。</p>
+<p>这里使用的另一种策略是称为线程本地存储。<code>Threading.local()</code>创建一个看起来像全局对象的对象，但在每个单独的线程该对象是特定的。在你的示例中，这是通过<code>threadLocal</code>和<code>get_session()</code>完成的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">threadLocal = threading.local()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_session</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> hasattr(threadLocal, <span class="string">"session"</span>):</span><br><span class="line">        threadLocal.session = requests.Session()</span><br><span class="line">    <span class="keyword">return</span> threadLocal.session</span><br></pre></td></tr></table></figure>
+
+<p><code>ThreadLocal</code>位于<code>threading</code>模块中，专门用于解决此问题。看起来有些奇怪，但是您只需要创建一个对象，而不是为每个线程创建一个。对象本身负责将来自不同线程的访问分配到不同的数据。</p>
+<p>当调用<code>get_session()</code>时，它查找的<code>session</code>特定于其正在运行的特定线程。因此，每个线程在首次调用<code>get_session()</code>时都会创建一个会话，然后在整个生命周期中的每个后续调用中仅使用该会话。</p>
+<p><strong>Why the <code>threading</code> Version Rocks</strong></p>
+<p>它很快！这是我测试的最快速度。请记住，非并行版本花费了超过14秒的时间：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./io_threading.py</span></span><br><span class="line">   [most output skipped]</span><br><span class="line">Downloaded 160 in 3.7238826751708984 seconds</span><br></pre></td></tr></table></figure>
+
+<p>它的执行时序图如下所示：</p>
+<img src="\2020-08-29-python-concurrency\Threading.3eef48da829e.png" alt="Timing Diagram of a Threading Solution" style="zoom:80%;">
+
+<p>它使用多个线程来同时向网站发出多个打开的请求，从而使您的程序可以重叠等待时间，从而更快地获得最终结果！</p>
+<p><strong>The Problems with the <code>threading</code> Version</strong></p>
+<p>好的，正如您从示例中看到的那样，这需要花费更多的代码才能实现，并且您实际上必须考虑一下线程之间共享的数据。</p>
+<p>线程可以以微妙且难以检测的方式进行交互。这些相互作用会导致竞态条件，从而经常导致随机的，间歇性的错误，这些错误很难发现。</p>
+<h3 id="asyncio-Version"><a href="#asyncio-Version" class="headerlink" title="asyncio Version"></a><code>asyncio</code> Version</h3><p>Before you jump into examining the <code>asyncio</code> example code, let’s talk more about how <code>asyncio</code> works.</p>
+<p><strong><code>asyncio</code> Basics</strong></p>
+<p>This will be a simplified version of <code>asyncio</code>. There are many details that are glossed over here, but it still conveys the idea of how it works.</p>
+<p>The general concept of <code>asyncio</code> is that a single Python object, called the event loop, controls how and when each task gets run. The event loop is aware of each task and knows what state it’s in. In reality, there are many states that tasks could be in, but for now let’s imagine a simplified event loop that just has two states.</p>
+<p>The ready state will indicate that a task has work to do and is ready to be run, and the waiting state means that the task is waiting for some external thing to finish, such as a network operation.</p>
+<p>Your simplified event loop maintains two lists of tasks, one for each of these states. It selects one of the ready tasks and starts it back to running. That task is in complete control until it cooperatively hands the control back to the event loop.</p>
+<p>When the running task gives control back to the event loop, the event loop places that task into either the ready or waiting list and then goes through each of the tasks in the waiting list to see if it has become ready by an I/O operation completing. It knows that the tasks in the ready list are still ready because it knows they haven’t run yet.</p>
+<p>Once all of the tasks have been sorted into the right list again, the event loop picks the next task to run, and the process repeats. Your simplified event loop picks the task that has been waiting the longest and runs that. This process repeats until the event loop is finished.</p>
+<p>An important point of <code>asyncio</code> is that the tasks never give up control without intentionally doing so. They never get interrupted in the middle of an operation. This allows us to share resources a bit more easily in <code>asyncio</code> than in <code>threading</code>. You don’t have to worry about making your code thread-safe.</p>
+<p>That’s a high-level view of what’s happening with <code>asyncio</code>. If you want more detail, <a href="https://stackoverflow.com/a/51116910/6843734" target="_blank" rel="noopener">this StackOverflow answer</a> provides some good details if you want to dig deeper.</p>
+<p><strong><code>async</code> and <code>await</code></strong></p>
+<p>Now let’s talk about two new keywords that were added to Python: <code>async</code> and <code>await</code>. In light of the discussion above, you can view <code>await</code> as the magic that allows the task to hand control back to the event loop. When your code awaits a function call, it’s a signal that the call is likely to be something that takes a while and that the task should give up control.</p>
+<p>It’s easiest to think of <code>async</code> as a flag to Python telling it that the function about to be defined uses <code>await</code>. There are some cases where this is not strictly true, like <a href="https://www.python.org/dev/peps/pep-0525/" target="_blank" rel="noopener">asynchronous generators</a>, but it holds for many cases and gives you a simple model while you’re getting started.</p>
+<p>One exception to this that you’ll see in the next code is the <code>async with</code> statement, which creates a context manager from an object you would normally await. While the semantics are a little different, the idea is the same: to flag this context manager as something that can get swapped out.</p>
+<p>As I’m sure you can imagine, there’s some complexity in managing the interaction between the event loop and the tasks. For developers starting out with <code>asyncio</code>, these details aren’t important, but you do need to remember that any function that calls <code>await</code> needs to be marked with <code>async</code>. You’ll get a syntax error otherwise.</p>
+<p><strong>Back to Code</strong></p>
+<p>Now that you’ve got a basic understanding of what <code>asyncio</code> is, let’s walk through the <code>asyncio</code> version of the example code and figure out how it works. Note that this version adds <a href="https://aiohttp.readthedocs.io/en/stable/" target="_blank" rel="noopener"><code>aiohttp</code></a>. You should run <code>pip install aiohttp</code> before running it:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">import asyncio</span><br><span class="line">import time</span><br><span class="line">import aiohttp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">async def download_site(session, url):</span><br><span class="line">    async with session.get(url) as response:</span><br><span class="line">        print(&quot;Read &#123;0&#125; from &#123;1&#125;&quot;.format(response.content_length, url))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">async def download_all_sites(sites):</span><br><span class="line">    async with aiohttp.ClientSession() as session:</span><br><span class="line">        tasks &#x3D; []</span><br><span class="line">        for url in sites:</span><br><span class="line">            task &#x3D; asyncio.ensure_future(download_site(session, url))</span><br><span class="line">            tasks.append(task)</span><br><span class="line">        await asyncio.gather(*tasks, return_exceptions&#x3D;True)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &quot;__main__&quot;:</span><br><span class="line">    sites &#x3D; [</span><br><span class="line">        &quot;https:&#x2F;&#x2F;www.jython.org&quot;,</span><br><span class="line">        &quot;http:&#x2F;&#x2F;olympus.realpython.org&#x2F;dice&quot;,</span><br><span class="line">    ] * 80</span><br><span class="line">    start_time &#x3D; time.time()</span><br><span class="line">    asyncio.get_event_loop().run_until_complete(download_all_sites(sites))</span><br><span class="line">    duration &#x3D; time.time() - start_time</span><br><span class="line">    print(f&quot;Downloaded &#123;len(sites)&#125; sites in &#123;duration&#125; seconds&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>This version is a bit more complex than the previous two. It has a similar structure, but there’s a bit more work setting up the tasks than there was creating the <code>ThreadPoolExecutor</code>. Let’s start at the top of the example.</p>
+<p><strong><code>download_site()</code></strong></p>
+<p><code>download_site()</code> at the top is almost identical to the <code>threading</code> version with the exception of the <code>async</code> keyword on the function definition line and the <code>async with</code> keywords when you actually call <code>session.get()</code>. You’ll see later why <code>Session</code> can be passed in here rather than using thread-local storage.</p>
+<p><strong><code>download_all_sites()</code></strong></p>
+<p><code>download_all_sites()</code> is where you will see the biggest change from the <code>threading</code> example.</p>
+<p>You can share the session across all tasks, so the session is created here as a context manager. The tasks can share the session because they are all running on the same thread. There is no way one task could interrupt another while the session is in a bad state.</p>
+<p>Inside that context manager, it creates a list of tasks using <code>asyncio.ensure_future()</code>, which also takes care of starting them. Once all the tasks are created, this function uses <code>asyncio.gather()</code> to keep the session context alive until all of the tasks have completed.</p>
+<p>The <code>threading</code> code does something similar to this, but the details are conveniently handled in the <code>ThreadPoolExecutor</code>. There currently is not an <code>AsyncioPoolExecutor</code> class.</p>
+<p>There is one small but important change buried in the details here, however. Remember how we talked about the number of threads to create? It wasn’t obvious in the <code>threading</code> example what the optimal number of threads was.</p>
+<p>One of the cool advantages of <code>asyncio</code> is that it scales far better than <code>threading</code>. Each task takes far fewer resources and less time to create than a thread, so creating and running more of them works well. This example just creates a separate task for each site to download, which works out quite well.</p>
+<p><strong><code>__main__</code></strong></p>
+<p>Finally, the nature of <code>asyncio</code> means that you have to start up the event loop and tell it which tasks to run. The <code>__main__</code> section at the bottom of the file contains the code to <code>get_event_loop()</code> and then <code>run_until_complete()</code>. If nothing else, they’ve done an excellent job in naming those functions.</p>
+<p>If you’ve updated to <a href="https://realpython.com/python37-new-features/" target="_blank" rel="noopener">Python 3.7</a>, the Python core developers simplified this syntax for you. Instead of the <code>asyncio.get_event_loop().run_until_complete()</code> tongue-twister, you can just use <code>asyncio.run()</code>.</p>
+<p><strong>Why the <code>asyncio</code> Version Rocks</strong></p>
+<p>It’s really fast! In the tests on my machine, this was the fastest version of the code by a good margin:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ .&#x2F;io_asyncio.py</span><br><span class="line">   [most output skipped]</span><br><span class="line">Downloaded 160 in 2.5727896690368652 seconds</span><br></pre></td></tr></table></figure>
+
+<p>The execution timing diagram looks quite similar to what’s happening in the <code>threading</code> example. It’s just that the I/O requests are all done by the same thread:</p>
+<p><a href="https://files.realpython.com/media/Asyncio.31182d3731cf.png" target="_blank" rel="noopener"><img src="https://files.realpython.com/media/Asyncio.31182d3731cf.png" alt="Timing Diagram of a Asyncio Solution"></a></p>
+<p>The lack of a nice wrapper like the <code>ThreadPoolExecutor</code> makes this code a bit more complex than the <code>threading</code> example. This is a case where you have to do a little extra work to get much better performance.</p>
+<p>Also there’s a common argument that having to add <code>async</code> and <code>await</code> in the proper locations is an extra complication. To a small extent, that is true. The flip side of this argument is that it forces you to think about when a given task will get swapped out, which can help you create a better, faster, design.</p>
+<p>The scaling issue also looms large here. Running the <code>threading</code> example above with a thread for each site is noticeably slower than running it with a handful of threads. Running the <code>asyncio</code> example with hundreds of tasks didn’t slow it down at all.</p>
+<p><strong>The Problems With the <code>asyncio</code> Version</strong></p>
+<p>There are a couple of issues with <code>asyncio</code> at this point. You need special async versions of libraries to gain the full advantage of <code>asyncio</code>. Had you just used <code>requests</code> for downloading the sites, it would have been much slower because <code>requests</code> is not designed to notify the event loop that it’s blocked. This issue is getting smaller and smaller as time goes on and more libraries embrace <code>asyncio</code>.</p>
+<p>Another, more subtle, issue is that all of the advantages of cooperative multitasking get thrown away if one of the tasks doesn’t cooperate. A minor mistake in code can cause a task to run off and hold the processor for a long time, starving other tasks that need running. There is no way for the event loop to break in if a task does not hand control back to it.</p>
+<p>With that in mind, let’s step up to a radically different approach to concurrency, <code>multiprocessing</code>.</p>
+<h3 id="multiprocessing-Version"><a href="#multiprocessing-Version" class="headerlink" title="multiprocessing Version"></a><code>multiprocessing</code> Version</h3><p>Unlike the previous approaches, the <code>multiprocessing</code> version of the code takes full advantage of the multiple CPUs that your cool, new computer has. Or, in my case, that my clunky, old laptop has. Let’s start with the code:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">import requests</span><br><span class="line">import multiprocessing</span><br><span class="line">import time</span><br><span class="line"></span><br><span class="line">session &#x3D; None</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def set_global_session():</span><br><span class="line">    global session</span><br><span class="line">    if not session:</span><br><span class="line">        session &#x3D; requests.Session()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def download_site(url):</span><br><span class="line">    with session.get(url) as response:</span><br><span class="line">        name &#x3D; multiprocessing.current_process().name</span><br><span class="line">        print(f&quot;&#123;name&#125;:Read &#123;len(response.content)&#125; from &#123;url&#125;&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def download_all_sites(sites):</span><br><span class="line">    with multiprocessing.Pool(initializer&#x3D;set_global_session) as pool:</span><br><span class="line">        pool.map(download_site, sites)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &quot;__main__&quot;:</span><br><span class="line">    sites &#x3D; [</span><br><span class="line">        &quot;https:&#x2F;&#x2F;www.jython.org&quot;,</span><br><span class="line">        &quot;http:&#x2F;&#x2F;olympus.realpython.org&#x2F;dice&quot;,</span><br><span class="line">    ] * 80</span><br><span class="line">    start_time &#x3D; time.time()</span><br><span class="line">    download_all_sites(sites)</span><br><span class="line">    duration &#x3D; time.time() - start_time</span><br><span class="line">    print(f&quot;Downloaded &#123;len(sites)&#125; in &#123;duration&#125; seconds&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>This is much shorter than the <code>asyncio</code> example and actually looks quite similar to the <code>threading</code> example, but before we dive into the code, let’s take a quick tour of what <code>multiprocessing</code> does for you.</p>
+<p><strong><code>multiprocessing</code> in a Nutshell</strong></p>
+<p>Up until this point, all of the examples of concurrency in this article run only on a single CPU or core in your computer. The reasons for this have to do with the current design of CPython and something called the Global Interpreter Lock, or GIL.</p>
+<p>This article won’t dive into the hows and whys of the <a href="https://realpython.com/python-gil/" target="_blank" rel="noopener">GIL</a>. It’s enough for now to know that the synchronous, <code>threading</code>, and <code>asyncio</code> versions of this example all run on a single CPU.</p>
+<p><code>multiprocessing</code> in the standard library was designed to break down that barrier and run your code across multiple CPUs. At a high level, it does this by creating a new instance of the Python interpreter to run on each CPU and then farming out part of your program to run on it.</p>
+<p>As you can imagine, bringing up a separate Python interpreter is not as fast as starting a new thread in the current Python interpreter. It’s a heavyweight operation and comes with some restrictions and difficulties, but for the correct problem, it can make a huge difference.</p>
+<p><strong><code>multiprocessing</code> Code</strong></p>
+<p>The code has a few small changes from our synchronous version. The first one is in <code>download_all_sites()</code>. Instead of simply calling <code>download_site()</code> repeatedly, it creates a <code>multiprocessing.Pool</code> object and has it map <code>download_site</code> to the iterable <code>sites</code>. This should look familiar from the <code>threading</code> example.</p>
+<p>What happens here is that the <code>Pool</code> creates a number of separate Python interpreter processes and has each one run the specified function on some of the items in the iterable, which in our case is the list of sites. The communication between the main process and the other processes is handled by the <code>multiprocessing</code> module for you.</p>
+<p>The line that creates <code>Pool</code> is worth your attention. First off, it does not specify how many processes to create in the <code>Pool</code>, although that is an optional parameter. By default, <code>multiprocessing.Pool()</code> will determine the number of CPUs in your computer and match that. This is frequently the best answer, and it is in our case.</p>
+<p>For this problem, increasing the number of processes did not make things faster. It actually slowed things down because the cost for setting up and tearing down all those processes was larger than the benefit of doing the I/O requests in parallel.</p>
+<p>Next we have the <code>initializer=set_global_session</code> part of that call. Remember that each process in our <code>Pool</code> has its own memory space. That means that they cannot share things like a <code>Session</code> object. You don’t want to create a new <code>Session</code> each time the function is called, you want to create one for each process.</p>
+<p>The <code>initializer</code> function parameter is built for just this case. There is not a way to pass a return value back from the <code>initializer</code> to the function called by the process <code>download_site()</code>, but you can initialize a global <code>session</code> variable to hold the single session for each process. Because each process has its own memory space, the global for each one will be different.</p>
+<p>That’s really all there is to it. The rest of the code is quite similar to what you’ve seen before.</p>
+<p><strong>Why the <code>multiprocessing</code> Version Rocks</strong></p>
+<p>The <code>multiprocessing</code> version of this example is great because it’s relatively easy to set up and requires little extra code. It also takes full advantage of the CPU power in your computer. The execution timing diagram for this code looks like this:</p>
+<p><a href="https://files.realpython.com/media/MProc.7cf3be371bbc.png" target="_blank" rel="noopener"><img src="https://files.realpython.com/media/MProc.7cf3be371bbc.png" alt="Timing Diagram of a Multiprocessing Solution"></a></p>
+<p><strong>The Problems With the <code>multiprocessing</code> Version</strong></p>
+<p>This version of the example does require some extra setup, and the global <code>session</code> object is strange. You have to spend some time thinking about which variables will be accessed in each process.</p>
+<p>Finally, it is clearly slower than the <code>asyncio</code> and <code>threading</code> versions in this example:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ .&#x2F;io_mp.py</span><br><span class="line">    [most output skipped]</span><br><span class="line">Downloaded 160 in 5.718175172805786 seconds</span><br></pre></td></tr></table></figure>
+
+<p>That’s not surprising, as I/O-bound problems are not really why <code>multiprocessing</code> exists. You’ll see more as you step into the next section and look at CPU-bound examples.</p>
+<h2 id="How-to-Speed-Up-a-CPU-Bound-Program"><a href="#How-to-Speed-Up-a-CPU-Bound-Program" class="headerlink" title="How to Speed Up a CPU-Bound Program"></a>How to Speed Up a CPU-Bound Program</h2><p>Let’s shift gears here a little bit. The examples so far have all dealt with an I/O-bound problem. Now, you’ll look into a CPU-bound problem. As you saw, an I/O-bound problem spends most of its time waiting for external operations, like a network call, to complete. A CPU-bound problem, on the other hand, does few I/O operations, and its overall execution time is a factor of how fast it can process the required data.</p>
+<p>For the purposes of our example, we’ll use a somewhat silly function to create something that takes a long time to run on the CPU. This function computes the sum of the squares of each number from 0 to the passed-in value:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def cpu_bound(number):</span><br><span class="line">    return sum(i * i for i in range(number))</span><br></pre></td></tr></table></figure>
+
+<p>You’ll be passing in large numbers, so this will take a while. Remember, this is just a placeholder for your code that actually does something useful and requires significant processing time, like computing the roots of equations or <a href="https://realpython.com/sorting-algorithms-python/" target="_blank" rel="noopener">sorting</a> a large data structure.</p>
+<h3 id="CPU-Bound-Synchronous-Version"><a href="#CPU-Bound-Synchronous-Version" class="headerlink" title="CPU-Bound Synchronous Version"></a>CPU-Bound Synchronous Version</h3><p>Now let’s look at the non-concurrent version of the example:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">import time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def cpu_bound(number):</span><br><span class="line">    return sum(i * i for i in range(number))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def find_sums(numbers):</span><br><span class="line">    for number in numbers:</span><br><span class="line">        cpu_bound(number)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &quot;__main__&quot;:</span><br><span class="line">    numbers &#x3D; [5_000_000 + x for x in range(20)]</span><br><span class="line"></span><br><span class="line">    start_time &#x3D; time.time()</span><br><span class="line">    find_sums(numbers)</span><br><span class="line">    duration &#x3D; time.time() - start_time</span><br><span class="line">    print(f&quot;Duration &#123;duration&#125; seconds&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>This code calls <code>cpu_bound()</code> 20 times with a different large number each time. It does all of this on a single thread in a single process on a single CPU. The execution timing diagram looks like this:</p>
+<p><a href="https://files.realpython.com/media/CPUBound.d2d32cb2626c.png" target="_blank" rel="noopener"><img src="https://files.realpython.com/media/CPUBound.d2d32cb2626c.png" alt="Timing Diagram of an CPU Bound Program"></a></p>
+<p>Unlike the I/O-bound examples, the CPU-bound examples are usually fairly consistent in their run times. This one takes about 7.8 seconds on my machine:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ .&#x2F;cpu_non_concurrent.py</span><br><span class="line">Duration 7.834432125091553 seconds</span><br></pre></td></tr></table></figure>
+
+<p>Clearly we can do better than this. This is all running on a single CPU with no concurrency. Let’s see what we can do to make it better.</p>
+<h3 id="threading-and-asyncio-Versions"><a href="#threading-and-asyncio-Versions" class="headerlink" title="threading and asyncio Versions"></a><code>threading</code> and <code>asyncio</code> Versions</h3><p>How much do you think rewriting this code using <code>threading</code> or <code>asyncio</code> will speed this up?</p>
+<p>If you answered “Not at all,” give yourself a cookie. If you answered, “It will slow it down,” give yourself two cookies.</p>
+<p>Here’s why: In your I/O-bound example above, much of the overall time was spent waiting for slow operations to finish. <code>threading</code> and <code>asyncio</code> sped this up by allowing you to overlap the times you were waiting instead of doing them sequentially.</p>
+<p>On a CPU-bound problem, however, there is no waiting. The CPU is cranking away as fast as it can to finish the problem. In Python, both threads and tasks run on the same CPU in the same process. That means that the one CPU is doing all of the work of the non-concurrent code plus the extra work of setting up threads or tasks. It takes more than 10 seconds:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ .&#x2F;cpu_threading.py</span><br><span class="line">Duration 10.407078266143799 seconds</span><br></pre></td></tr></table></figure>
+
+<p>I’ve written up a <code>threading</code> version of this code and placed it with the other example code in the <a href="https://github.com/realpython/materials/tree/master/concurrency-overview" target="_blank" rel="noopener">GitHub repo</a> so you can go test this yourself. Let’s not look at that just yet, however.</p>
+<h3 id="CPU-Bound-multiprocessing-Version"><a href="#CPU-Bound-multiprocessing-Version" class="headerlink" title="CPU-Bound multiprocessing Version"></a>CPU-Bound <code>multiprocessing</code> Version</h3><p>Now you’ve finally reached where <code>multiprocessing</code> really shines. Unlike the other concurrency libraries, <code>multiprocessing</code> is explicitly designed to share heavy CPU workloads across multiple CPUs. Here’s what its execution timing diagram looks like:</p>
+<p><a href="https://files.realpython.com/media/CPUMP.69c1a7fad9c4.png" target="_blank" rel="noopener"><img src="https://files.realpython.com/media/CPUMP.69c1a7fad9c4.png" alt="Timing Diagram of a CPU-Bound Multiprocessing Solution"></a></p>
+<p>Here’s what the code looks like:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import multiprocessing</span><br><span class="line">import time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def cpu_bound(number):</span><br><span class="line">    return sum(i * i for i in range(number))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def find_sums(numbers):</span><br><span class="line">    with multiprocessing.Pool() as pool:</span><br><span class="line">        pool.map(cpu_bound, numbers)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &quot;__main__&quot;:</span><br><span class="line">    numbers &#x3D; [5_000_000 + x for x in range(20)]</span><br><span class="line"></span><br><span class="line">    start_time &#x3D; time.time()</span><br><span class="line">    find_sums(numbers)</span><br><span class="line">    duration &#x3D; time.time() - start_time</span><br><span class="line">    print(f&quot;Duration &#123;duration&#125; seconds&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>Little of this code had to change from the non-concurrent version. You had to <code>import multiprocessing</code> and then just change from looping through the numbers to creating a <code>multiprocessing.Pool</code> object and using its <code>.map()</code> method to send individual numbers to worker-processes as they become free.</p>
+<p>This was just what you did for the I/O-bound <code>multiprocessing</code> code, but here you don’t need to worry about the <code>Session</code> object.</p>
+<p>As mentioned above, the <code>processes</code> optional parameter to the <code>multiprocessing.Pool()</code> constructor deserves some attention. You can specify how many <code>Process</code> objects you want created and managed in the <code>Pool</code>. By default, it will determine how many CPUs are in your machine and create a process for each one. While this works great for our simple example, you might want to have a little more control in a production environment.</p>
+<p>Also, as we mentioned in the first section about <code>threading</code>, the <code>multiprocessing.Pool</code> code is built upon building blocks like <code>Queue</code> and <code>Semaphore</code> that will be familiar to those of you who have done multithreaded and multiprocessing code in other languages.</p>
+<p><strong>Why the <code>multiprocessing</code> Version Rocks</strong></p>
+<p>The <code>multiprocessing</code> version of this example is great because it’s relatively easy to set up and requires little extra code. It also takes full advantage of the CPU power in your computer.</p>
+<p>Hey, that’s exactly what I said the last time we looked at <code>multiprocessing</code>. The big difference is that this time it is clearly the best option. It takes 2.5 seconds on my machine:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ .&#x2F;cpu_mp.py</span><br><span class="line">Duration 2.5175397396087646 seconds</span><br></pre></td></tr></table></figure>
+
+<p>That’s much better than we saw with the other options.</p>
+<p><strong>The Problems With the <code>multiprocessing</code> Version</strong></p>
+<p>There are some drawbacks to using <code>multiprocessing</code>. They don’t really show up in this simple example, but splitting your problem up so each processor can work independently can sometimes be difficult.</p>
+<p>Also, many solutions require more communication between the processes. This can add some complexity to your solution that a non-concurrent program would not need to deal with.</p>
+<h2 id="When-to-Use-Concurrency"><a href="#When-to-Use-Concurrency" class="headerlink" title="When to Use Concurrency"></a>When to Use Concurrency</h2><p>You’ve covered a lot of ground here, so let’s review some of the key ideas and then discuss some decision points that will help you determine which, if any, concurrency module you want to use in your project.</p>
+<p>The first step of this process is deciding if you <em>should</em> use a concurrency module. While the examples here make each of the libraries look pretty simple, concurrency always comes with extra complexity and can often result in bugs that are difficult to find.</p>
+<p>Hold out on adding concurrency until you have a known performance issue and <em>then</em> determine which type of concurrency you need. As <a href="https://en.wikipedia.org/wiki/Donald_Knuth" target="_blank" rel="noopener">Donald Knuth</a> has said, “Premature optimization is the root of all evil (or at least most of it) in programming.”</p>
+<p>Once you’ve decided that you should optimize your program, figuring out if your program is CPU-bound or I/O-bound is a great next step. Remember that I/O-bound programs are those that spend most of their time waiting for something to happen while CPU-bound programs spend their time processing data or crunching numbers as fast as they can.</p>
+<p>As you saw, CPU-bound problems only really gain from using <code>multiprocessing</code>. <code>threading</code> and <code>asyncio</code> did not help this type of problem at all.</p>
+<p>For I/O-bound problems, there’s a general rule of thumb in the Python community: “Use <code>asyncio</code> when you can, <code>threading</code> when you must.” <code>asyncio</code> can provide the best speed up for this type of program, but sometimes you will require critical libraries that have not been ported to take advantage of <code>asyncio</code>. Remember that any task that doesn’t give up control to the event loop will block all of the other tasks.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>You’ve now seen the basic types of concurrency available in Python:</p>
+<ul>
+<li><code>threading</code></li>
+<li><code>asyncio</code></li>
+<li><code>multiprocessing</code></li>
+</ul>
+<p>You’ve got the understanding to decide which concurrency method you should use for a given problem, or if you should use any at all! In addition, you’ve achieved a better understanding of some of the problems that can arise when you’re using concurrency.</p>
+<p>I hope you’ve learned a lot from this article and that you find a great use for concurrency in your own projects! Be sure to take our “Python Concurrency” quiz linked below to check your learning:</p>
+</section>
+    <!-- Tags START -->
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/08/28/2020-08-28-Python%E4%B8%AD%E7%9A%84%E5%BC%82%E6%AD%A5IO/">
+        <span class="nav-arrow">← </span>
+        
+          Python中的异步IO
+        
+      </a>
+    
+    
+      <a class="nav-right" href="/2020/09/20/2020-09-20-%E5%88%B6%E4%BD%9C%E4%B8%80%E4%B8%AA%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/">
+        
+          制作一个全文搜索引擎
+        
+        <span class="nav-arrow"> →</span>
+      </a>
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#What-Is-Concurrency"><span class="toc-nav-text">What Is Concurrency?</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#What-Is-Parallelism"><span class="toc-nav-text">What Is Parallelism?</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#When-Is-Concurrency-Useful"><span class="toc-nav-text">When Is Concurrency Useful?</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#How-to-Speed-Up-an-I-O-Bound-Program"><span class="toc-nav-text">How to Speed Up an I&#x2F;O-Bound Program</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Synchronous-Version"><span class="toc-nav-text">Synchronous Version</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#threading-Version"><span class="toc-nav-text">threading Version</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#asyncio-Version"><span class="toc-nav-text">asyncio Version</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#multiprocessing-Version"><span class="toc-nav-text">multiprocessing Version</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#How-to-Speed-Up-a-CPU-Bound-Program"><span class="toc-nav-text">How to Speed Up a CPU-Bound Program</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#CPU-Bound-Synchronous-Version"><span class="toc-nav-text">CPU-Bound Synchronous Version</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#threading-and-asyncio-Versions"><span class="toc-nav-text">threading and asyncio Versions</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#CPU-Bound-multiprocessing-Version"><span class="toc-nav-text">CPU-Bound multiprocessing Version</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#When-to-Use-Concurrency"><span class="toc-nav-text">When to Use Concurrency</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#Conclusion"><span class="toc-nav-text">Conclusion</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://shanyongbo.github.io/2020/08/29/2020-08-29-python-concurrency/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "shan";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "Python concurrency",
+        owner: "shan",
+        repo: "shan.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="shan&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      制作一个全文搜索引擎 | shan
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>shan</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>制作一个全文搜索引擎</h2>
+  <p class="post-date">2020-09-20</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><p>原文地址：<a href="https://artem.krylysov.com/blog/2020/07/28/lets-build-a-full-text-search-engine/" target="_blank" rel="noopener">Let’s build a Full-Text Search engine</a></p>
+<p>本文是一片关于搜索引擎文章的翻译，仅供个人学习使用。</p>
+<a id="more"></a>
+
+<p>全文搜索是人们每天都会使用但却没有意识到的工具之一。如果你用谷歌搜索 “golang coverage report” 或者想在电子商务网站找到 “indoor wireless camera” ，你就会用到某种全文搜索引擎。</p>
+<p><strong>全文搜索（Full-Text Search，FTS）</strong>是一个在一系列文档进行搜索特定内容的技术。这个文档可能是一个网页，报纸上的一篇文章，一个邮件信息，或者其他类型的内容。</p>
+<p>这里我们会去构建一个我们自己的全文搜索引擎。在文章的最后，我们能够在数百万的文档中耗费1毫秒以内搜索到所需的内容。我们会以一个简单的搜索案例开始，例如：在所有文档中搜索带有cat的文档，然后我们会去扩展这个引擎去支持更加复杂的布尔查询。</p>
+<p><strong>注</strong>：最著名的FTS引擎叫<strong>Lucene</strong>（如<strong>Elasticsearch</strong>和<strong>solr</strong>就是建立在它之上的）。</p>
+<h3 id="Why-FTS"><a href="#Why-FTS" class="headerlink" title="Why FTS"></a>Why FTS</h3><p>在我们开始编写代码之前，你可能会问：我们能不能只用grep或者用循环进行检查每个文档，从而找到包含我们寻找内容的文档？答案是可以，但是这不是最好的方法。</p>
+<h3 id="Corpus"><a href="#Corpus" class="headerlink" title="Corpus"></a>Corpus</h3><p>我们将搜索英语维基百科摘要的一部分。最新的dump位于<a href="https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-abstract1.xml.gz" target="_blank" rel="noopener">dumps.wikimedia.org</a>。截至今天，解压缩后的文件大小为913 MB。 XML文件包含超过60万个文档。</p>
+<p>文档示例：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">title</span>&gt;</span>Wikipedia: Kit-Cat Klock<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">url</span>&gt;</span>https://en.wikipedia.org/wiki/Kit-Cat_Klock<span class="tag">&lt;/<span class="name">url</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">abstract</span>&gt;</span>The Kit-Cat Klock is an art deco novelty wall clock shaped like a grinning cat with cartoon eyes that swivel in time with its pendulum tail.<span class="tag">&lt;/<span class="name">abstract</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Loading-documents"><a href="#Loading-documents" class="headerlink" title="Loading documents"></a>Loading documents</h3><p>首先，我们需要从dump中中加载所有的文档，内置库<code>encoding/xml</code>处理起来非常方便：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"encoding/xml"</span></span><br><span class="line">    <span class="string">"os"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> document <span class="keyword">struct</span> &#123;</span><br><span class="line">    Title <span class="keyword">string</span> <span class="string">`xml:"title"`</span></span><br><span class="line">    URL   <span class="keyword">string</span> <span class="string">`xml:"url"`</span></span><br><span class="line">    Text  <span class="keyword">string</span> <span class="string">`xml:"abstract"`</span></span><br><span class="line">    ID    <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">loadDocuments</span><span class="params">(path <span class="keyword">string</span>)</span> <span class="params">([]document, error)</span></span> &#123;</span><br><span class="line">    f, err := os.Open(path)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">defer</span> f.Close()</span><br><span class="line"></span><br><span class="line">    dec := xml.NewDecoder(f)</span><br><span class="line">    dump := <span class="keyword">struct</span> &#123;</span><br><span class="line">        Documents []document <span class="string">`xml:"doc"`</span></span><br><span class="line">    &#125;&#123;&#125;</span><br><span class="line">    <span class="keyword">if</span> err := dec.Decode(&amp;dump); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    docs := dump.Documents</span><br><span class="line">    <span class="keyword">for</span> i := <span class="keyword">range</span> docs &#123;</span><br><span class="line">        docs[i].ID = i</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> docs, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>每个加载的文档都会分配一个唯一的标识符。为简单起见，第一个加载的文档被分配的ID = 0，第二个ID = 1，依此类推。</p>
+<h3 id="First-attempt"><a href="#First-attempt" class="headerlink" title="First attempt"></a>First attempt</h3><h4 id="Searching-the-content"><a href="#Searching-the-content" class="headerlink" title="Searching the content"></a>Searching the content</h4><p>现在我们把所有的文档都加载到内存里了，我们可以尝试在当中找到有关与cat的文档。最开始，尝试循环所有文档并检查它们中间是否包含cat：</p>
+<p>Now that we have all documents loaded into memory, we can try to find the ones about cats. At first, let’s loop through all documents and check if they contain the substring <em>cat</em>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">search</span><span class="params">(docs []document, term <span class="keyword">string</span>)</span> []<span class="title">document</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> r []document</span><br><span class="line">    <span class="keyword">for</span> _, doc := <span class="keyword">range</span> docs &#123;</span><br><span class="line">        <span class="keyword">if</span> strings.Contains(doc.Text, term) &#123;</span><br><span class="line">            r = <span class="built_in">append</span>(r, doc)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在我的笔记本中，这个查询花费了103ms，不算太差。如果从输出中检查部分文档，你可能会注意到该函数匹配到了 <em>caterpillar</em> 和 <em>category</em> ，但与 <em>Cat</em> 的大写字母 <em>C</em> 不匹配，那不是我想要的。</p>
+<p>我们需要在更进一步之前修复两个问题：</p>
+<ul>
+<li>让搜索大小写不敏感（这样就能搜索到Cat了）；</li>
+<li>匹配一个单词，而不是子字符串（这样 <em>caterpillar</em> 和<em>communication</em>就不会被匹配到了）。</li>
+</ul>
+<h4 id="Searching-with-regular-expressions"><a href="#Searching-with-regular-expressions" class="headerlink" title="Searching with regular expressions"></a>Searching with regular expressions</h4><p>很快想到的并且易实现的一个解决方法是使用正则表达式： <code>(?i)\bcat\b</code>，</p>
+<ul>
+<li><code>(?i)</code>让表达式大小写不敏感；</li>
+<li><code>\b</code>匹配一个单词边界；</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">search</span><span class="params">(docs []document, term <span class="keyword">string</span>)</span> []<span class="title">document</span></span> &#123;</span><br><span class="line">    re := regexp.MustCompile(<span class="string">`(?i)\b`</span> + term + <span class="string">`\b`</span>) <span class="comment">// Don't do this in production, it's a security risk. term needs to be sanitized.</span></span><br><span class="line">    <span class="keyword">var</span> r []document</span><br><span class="line">    <span class="keyword">for</span> _, doc := <span class="keyword">range</span> docs &#123;</span><br><span class="line">        <span class="keyword">if</span> re.MatchString(doc.Text) &#123;</span><br><span class="line">            r = <span class="built_in">append</span>(r, doc)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个查找的过程耗时超过2秒。如你所见，尽管只有60万个文档，查找也开始变慢。尽管该方法易于实施，但伸缩性不好。随着数据集变得越来越大，我们需要扫描越来越多的文档。该算法的时间复杂度是线性的，需要扫描的文档数等于文档总数。如果我们有600万个文档而不是60万个文档，则搜索将花费20秒。因此，我们需要更好的方法。</p>
+<h3 id="Inverted-Index"><a href="#Inverted-Index" class="headerlink" title="Inverted Index"></a>Inverted Index</h3><p>为了让查找更快，我们将对文本进行预处理并预先建立索引。</p>
+<p>FTS的核心是一个称为<strong>倒排索引</strong>的数据结构。倒排索引将文档中的每个单词与包含该单词的文档相关联。</p>
+<p>例如：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">documents = &#123;</span><br><span class="line">    <span class="number">1</span>: <span class="string">"a donut on a glass plate"</span>,</span><br><span class="line">    <span class="number">2</span>: <span class="string">"only the donut"</span>,</span><br><span class="line">    <span class="number">3</span>: <span class="string">"listen to the drum machine"</span>,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">index = &#123;</span><br><span class="line">    <span class="string">"a"</span>: [<span class="number">1</span>],</span><br><span class="line">    <span class="string">"donut"</span>: [<span class="number">1</span>, <span class="number">2</span>],</span><br><span class="line">    <span class="string">"on"</span>: [<span class="number">1</span>],</span><br><span class="line">    <span class="string">"glass"</span>: [<span class="number">1</span>],</span><br><span class="line">    <span class="string">"plate"</span>: [<span class="number">1</span>],</span><br><span class="line">    <span class="string">"only"</span>: [<span class="number">2</span>],</span><br><span class="line">    <span class="string">"the"</span>: [<span class="number">2</span>, <span class="number">3</span>],</span><br><span class="line">    <span class="string">"listen"</span>: [<span class="number">3</span>],</span><br><span class="line">    <span class="string">"to"</span>: [<span class="number">3</span>],</span><br><span class="line">    <span class="string">"drum"</span>: [<span class="number">3</span>],</span><br><span class="line">    <span class="string">"machine"</span>: [<span class="number">3</span>],</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Below is a real-world example of the Inverted Index. An index in a book where a term references a page number:</p>
+<p>以下是倒排索引的真实示例。一本书的索引及其中术语引用页码：</p>
+<p><img src="/2020/09/20/2020-09-20-%E5%88%B6%E4%BD%9C%E4%B8%80%E4%B8%AA%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/book-index.png" alt="img"></p>
+<h3 id="Text-analysis"><a href="#Text-analysis" class="headerlink" title="Text analysis"></a>Text analysis</h3><p>在我们开始建索引之前，我们需要将源文档拆分成一系列的单词（词项，token），从而适合索引和搜索。<strong>文本分析器（text analyzer）</strong>由一个<strong>标记器（tokenizer）</strong>和多个<strong>过滤器（filter）</strong>组成。</p>
+<p><img src="/2020/09/20/2020-09-20-%E5%88%B6%E4%BD%9C%E4%B8%80%E4%B8%AA%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/text-analysis.png" alt="img"></p>
+<h3 id="Tokenizer"><a href="#Tokenizer" class="headerlink" title="Tokenizer"></a>Tokenizer</h3><p>文本分析的第一步是标记。它的工作是将文本转化为一系列token。我们的实现是在单词边界上分割文本并删除标点符号：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">tokenize</span><span class="params">(text <span class="keyword">string</span>)</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> strings.FieldsFunc(text, <span class="function"><span class="keyword">func</span><span class="params">(r <span class="keyword">rune</span>)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">        <span class="comment">// Split on any character that is not a letter or a number.</span></span><br><span class="line">        <span class="keyword">return</span> !unicode.IsLetter(r) &amp;&amp; !unicode.IsNumber(r)</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br><span class="line">&gt; tokenize(<span class="string">"A donut on a glass plate. Only the donuts."</span>)</span><br><span class="line"></span><br><span class="line">[<span class="string">"A"</span>, <span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"a"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"Only"</span>, <span class="string">"the"</span>, <span class="string">"donuts"</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="Filters"><a href="#Filters" class="headerlink" title="Filters"></a>Filters</h3><p>在大多数情况下，仅将文本转换为token列表是不够的。为了使文本更易于索引和搜索，我们需要进行其他标准化。</p>
+<h4 id="Lowercase"><a href="#Lowercase" class="headerlink" title="Lowercase"></a>Lowercase</h4><p>为了使搜索不区分大小写，小写过滤器将标记转换为小写。 <em>cAt<em>，</em>Cat</em> 和 <em>caT</em> 被标准化为 <em>cat<em>。稍后，当我们查询索引时，我们也将小写搜索词。这将使搜索词</em>cAt</em> 与文本 <em>Cat</em> 相匹配。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">lowercaseFilter</span><span class="params">(tokens []<span class="keyword">string</span>)</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">    r := <span class="built_in">make</span>([]<span class="keyword">string</span>, <span class="built_in">len</span>(tokens))</span><br><span class="line">    <span class="keyword">for</span> i, token := <span class="keyword">range</span> tokens &#123;</span><br><span class="line">        r[i] = strings.ToLower(token)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br><span class="line">&gt; lowercaseFilter([]<span class="keyword">string</span>&#123;<span class="string">"A"</span>, <span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"a"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"Only"</span>, <span class="string">"the"</span>, <span class="string">"donuts"</span>&#125;)</span><br><span class="line"></span><br><span class="line">[<span class="string">"a"</span>, <span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"a"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"only"</span>, <span class="string">"the"</span>, <span class="string">"donuts"</span>]</span><br></pre></td></tr></table></figure>
+
+<h4 id="Dropping-common-words"><a href="#Dropping-common-words" class="headerlink" title="Dropping common words"></a>Dropping common words</h4><p>几乎所有英文文本都包含常用单词，例如<em>a</em>，<em>I</em>，<em>the</em>或<em>be</em>。这些单词称为<strong>停用词</strong>。我们将删除它们，因为几乎所有文档都将与停用词匹配。</p>
+<p>没有停用词的“官方”列表。让我们按<a href="https://en.wikipedia.org/wiki/Most_common_words_in_English" target="_blank" rel="noopener">OEC排名</a>排除前十名。随时添加更多：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> stopwords = <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">struct</span>&#123;&#125;&#123; <span class="comment">// I wish Go had built-in sets.</span></span><br><span class="line">    <span class="string">"a"</span>: &#123;&#125;, <span class="string">"and"</span>: &#123;&#125;, <span class="string">"be"</span>: &#123;&#125;, <span class="string">"have"</span>: &#123;&#125;, <span class="string">"i"</span>: &#123;&#125;,</span><br><span class="line">    <span class="string">"in"</span>: &#123;&#125;, <span class="string">"of"</span>: &#123;&#125;, <span class="string">"that"</span>: &#123;&#125;, <span class="string">"the"</span>: &#123;&#125;, <span class="string">"to"</span>: &#123;&#125;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">stopwordFilter</span><span class="params">(tokens []<span class="keyword">string</span>)</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">    r := <span class="built_in">make</span>([]<span class="keyword">string</span>, <span class="number">0</span>, <span class="built_in">len</span>(tokens))</span><br><span class="line">    <span class="keyword">for</span> _, token := <span class="keyword">range</span> tokens &#123;</span><br><span class="line">        <span class="keyword">if</span> _, ok := stopwords[token]; !ok &#123;</span><br><span class="line">            r = <span class="built_in">append</span>(r, token)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br><span class="line">&gt; stopwordFilter([]<span class="keyword">string</span>&#123;<span class="string">"a"</span>, <span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"a"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"only"</span>, <span class="string">"the"</span>, <span class="string">"donuts"</span>&#125;)</span><br><span class="line"></span><br><span class="line">[<span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"only"</span>, <span class="string">"donuts"</span>]</span><br></pre></td></tr></table></figure>
+
+<h4 id="Stemming"><a href="#Stemming" class="headerlink" title="Stemming"></a>Stemming</h4><p>由于语法规则，文档可能包含同一单词的不同形式。词干将单词还原为基本形式。例如，<em>fishing</em>，<em>fished</em>和<em>fisher</em>可以简化为基本形式（词干）<em>fish</em>。</p>
+<p>实施词干分析器是一项艰巨的任务，本文不做介绍。我们将采用<a href="https://github.com/kljensen/snowball" target="_blank" rel="noopener">已有的</a>模块之一：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> snowballeng <span class="string">"github.com/kljensen/snowball/english"</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">stemmerFilter</span><span class="params">(tokens []<span class="keyword">string</span>)</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">    r := <span class="built_in">make</span>([]<span class="keyword">string</span>, <span class="built_in">len</span>(tokens))</span><br><span class="line">    <span class="keyword">for</span> i, token := <span class="keyword">range</span> tokens &#123;</span><br><span class="line">        r[i] = snowballeng.Stem(token, <span class="literal">false</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br><span class="line">&gt; stemmerFilter([]<span class="keyword">string</span>&#123;<span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"only"</span>, <span class="string">"donuts"</span>&#125;)</span><br><span class="line"></span><br><span class="line">[<span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"only"</span>, <span class="string">"donut"</span>]</span><br></pre></td></tr></table></figure>
+
+<p><strong>注</strong>：词根并非总是有效的词。例如，某些词干可以将<em>airline</em>减少为<em>airlin</em>。</p>
+<h3 id="Putting-the-analyzer-together"><a href="#Putting-the-analyzer-together" class="headerlink" title="Putting the analyzer together"></a>Putting the analyzer together</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">analyze</span><span class="params">(text <span class="keyword">string</span>)</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">    tokens := tokenize(text)</span><br><span class="line">    tokens = lowercaseFilter(tokens)</span><br><span class="line">    tokens = stopwordFilter(tokens)</span><br><span class="line">    tokens = stemmerFilter(tokens)</span><br><span class="line">    <span class="keyword">return</span> tokens</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>标记器和过滤器将句子转换为token列表：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; analyze(<span class="string">"A donut on a glass plate. Only the donuts."</span>)</span><br><span class="line"></span><br><span class="line">[<span class="string">"donut"</span>, <span class="string">"on"</span>, <span class="string">"glass"</span>, <span class="string">"plate"</span>, <span class="string">"only"</span>, <span class="string">"donut"</span>]</span><br></pre></td></tr></table></figure>
+
+<p>tokens 已准备好建立索引。</p>
+<h3 id="Building-the-index"><a href="#Building-the-index" class="headerlink" title="Building the index"></a>Building the index</h3><p>Back to the inverted index. It maps every word in documents to document IDs. The built-in map is a good candidate for storing the mapping. The key in the map is a token (string) and the value is a list of document IDs:</p>
+<p>回到倒排索引，它将文档中的每个单词映射到文档ID。内置map是存储映射的理想选择。映射中的键是token（字符串），值是文档ID的列表：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> index <span class="keyword">map</span>[<span class="keyword">string</span>][]<span class="keyword">int</span></span><br></pre></td></tr></table></figure>
+
+<p>构建索引包括分析文档并将其ID添加到map：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(idx index)</span> <span class="title">add</span><span class="params">(docs []document)</span></span> &#123;</span><br><span class="line">    <span class="keyword">for</span> _, doc := <span class="keyword">range</span> docs &#123;</span><br><span class="line">        <span class="keyword">for</span> _, token := <span class="keyword">range</span> analyze(doc.Text) &#123;</span><br><span class="line">            ids := idx[token]</span><br><span class="line">            <span class="keyword">if</span> ids != <span class="literal">nil</span> &amp;&amp; ids[<span class="built_in">len</span>(ids)<span class="number">-1</span>] == doc.ID &#123;</span><br><span class="line">                <span class="comment">// Don't add same ID twice.</span></span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">            idx[token] = <span class="built_in">append</span>(ids, doc.ID)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    idx := <span class="built_in">make</span>(index)</span><br><span class="line">    idx.add([]document&#123;&#123;ID: <span class="number">1</span>, Text: <span class="string">"A donut on a glass plate. Only the donuts."</span>&#125;&#125;)</span><br><span class="line">    idx.add([]document&#123;&#123;ID: <span class="number">2</span>, Text: <span class="string">"donut is a donut"</span>&#125;&#125;)</span><br><span class="line">    fmt.Println(idx)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>映射中的每个token都引用包含token的文档的ID：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">map</span>[donut:[<span class="number">1</span> <span class="number">2</span>] glass:[<span class="number">1</span>] is:[<span class="number">2</span>] on:[<span class="number">1</span>] only:[<span class="number">1</span>] plate:[<span class="number">1</span>]]</span><br></pre></td></tr></table></figure>
+
+<h3 id="Querying"><a href="#Querying" class="headerlink" title="Querying"></a>Querying</h3><p>要查询索引，我们将应用与索引相同的标记器和过滤器：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(idx index)</span> <span class="title">search</span><span class="params">(text <span class="keyword">string</span>)</span> [][]<span class="title">int</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> r [][]<span class="keyword">int</span></span><br><span class="line">    <span class="keyword">for</span> _, token := <span class="keyword">range</span> analyze(text) &#123;</span><br><span class="line">        <span class="keyword">if</span> ids, ok := idx[token]; ok &#123;</span><br><span class="line">            r = <span class="built_in">append</span>(r, ids)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br><span class="line">&gt; idx.search(<span class="string">"Small wild cat"</span>)</span><br><span class="line"></span><br><span class="line">[[<span class="number">24</span>, <span class="number">173</span>, <span class="number">303</span>, ...], [<span class="number">98</span>, <span class="number">173</span>, <span class="number">765</span>, ...], [[<span class="number">24</span>, <span class="number">51</span>, <span class="number">173</span>, ...]]</span><br></pre></td></tr></table></figure>
+
+<p>最后，我们可以找到所有提及<em>cat</em>的文件。搜索60万文档不到一毫秒（18µs）！</p>
+<p>使用倒排索引，搜索查询的时间复杂度与搜索token的数量呈线性关系。在上面的示例查询中，除了分析输入文本外，搜索仅需要执行三次map查找。</p>
+<h3 id="Boolean-queries"><a href="#Boolean-queries" class="headerlink" title="Boolean queries"></a>Boolean queries</h3><p>上一节中的查询为每个token返回了一份文档列表。我们通常希望在搜索框中输入<em>small wild cat</em>时找到的结果列表是同时包含<em>small</em>，<em>wild</em>和<em>cat</em>的结果。下一步是计算列表之间的交集。这样，我们将获得与所有标记匹配的文档列表。</p>
+<p><img src="/2020/09/20/2020-09-20-%E5%88%B6%E4%BD%9C%E4%B8%80%E4%B8%AA%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/venn.png" alt="img"></p>
+<p>幸运的是，倒排索引中的ID按升序插入。由于ID已排序，因此可以在线性时间内计算两个列表之间的交集。相交函数同时迭代两个列表，并收集两个列表中都存在的ID：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">intersection</span><span class="params">(a []<span class="keyword">int</span>, b []<span class="keyword">int</span>)</span> []<span class="title">int</span></span> &#123;</span><br><span class="line">    maxLen := <span class="built_in">len</span>(a)</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(b) &gt; maxLen &#123;</span><br><span class="line">        maxLen = <span class="built_in">len</span>(b)</span><br><span class="line">    &#125;</span><br><span class="line">    r := <span class="built_in">make</span>([]<span class="keyword">int</span>, <span class="number">0</span>, maxLen)</span><br><span class="line">    <span class="keyword">var</span> i, j <span class="keyword">int</span></span><br><span class="line">    <span class="keyword">for</span> i &lt; <span class="built_in">len</span>(a) &amp;&amp; j &lt; <span class="built_in">len</span>(b) &#123;</span><br><span class="line">        <span class="keyword">if</span> a[i] &lt; b[j] &#123;</span><br><span class="line">            i++</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> a[i] &gt; b[j] &#123;</span><br><span class="line">            j++</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            r = <span class="built_in">append</span>(r, a[i])</span><br><span class="line">            i++</span><br><span class="line">            j++</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>更新后的搜索将分析给定的查询文本，查找令牌并计算ID列表之间的交集：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(idx index)</span> <span class="title">search</span><span class="params">(text <span class="keyword">string</span>)</span> []<span class="title">int</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> r []<span class="keyword">int</span></span><br><span class="line">    <span class="keyword">for</span> _, token := <span class="keyword">range</span> analyze(text) &#123;</span><br><span class="line">        <span class="keyword">if</span> ids, ok := idx[token]; ok &#123;</span><br><span class="line">            <span class="keyword">if</span> r == <span class="literal">nil</span> &#123;</span><br><span class="line">                r = ids</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                r = intersection(r, ids)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Token doesn't exist.</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Wikipedia转储仅包含两个同时匹配<em>small</em>，<em>wild</em>和<em>cat</em>的文档：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt; idx.search(<span class="string">"Small wild cat"</span>)</span><br><span class="line"></span><br><span class="line"><span class="number">130764</span>  The wildcat is a species <span class="built_in">complex</span> comprising two small wild cat species, the European wildcat (Felis silvestris) and the African wildcat (F. lybica).</span><br><span class="line"><span class="number">131692</span>  Catopuma is a genus containing two Asian small wild cat species, the Asian golden cat (C. temminckii) and the bay cat.</span><br></pre></td></tr></table></figure>
+
+<h3 id="Conclusions"><a href="#Conclusions" class="headerlink" title="Conclusions"></a>Conclusions</h3><p>我们刚刚构建了全文搜索引擎。尽管它很简单，但它可以为更高级的项目打下坚实的基础。</p>
+<p>我没有涉及很多可以显着提高性能并使引擎更友好的东西。以下是一些进一步改进的想法：</p>
+<ul>
+<li><p>扩展布尔查询以支持<em>OR</em>和<em>NOT</em>。</p>
+</li>
+<li><p>将索引存储在磁盘上：</p>
+<ul>
+<li>每次重新启动应用程序时重建索引可能需要一段时间。</li>
+<li>大索引可能无法容纳在内存中。</li>
+</ul>
+</li>
+<li><p>试用内存和CPU效率高的数据格式来存储文档ID集。<a href="https://roaringbitmap.org/" target="_blank" rel="noopener">Roaring Bitmaps</a>。</p>
+</li>
+<li><p>支持索引多个文档字段。</p>
+</li>
+<li><p>按相关性对结果进行排序。</p>
+</li>
+</ul>
+<p>完整的源代码可在<a href="https://github.com/akrylysov/simplefts" target="_blank" rel="noopener">GitHub</a>上找到。</p>
+</section>
+    <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#FTS" >
+    <span class="tag-code">FTS</span>
+  </a>
+
+  <a href="/tags#golang" >
+    <span class="tag-code">golang</span>
+  </a>
+
+      </div>
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/08/29/2020-08-29-python-concurrency/">
+        <span class="nav-arrow">← </span>
+        
+          Python concurrency
+        
+      </a>
+    
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Why-FTS"><span class="toc-nav-text">Why FTS</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Corpus"><span class="toc-nav-text">Corpus</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Loading-documents"><span class="toc-nav-text">Loading documents</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#First-attempt"><span class="toc-nav-text">First attempt</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#Searching-the-content"><span class="toc-nav-text">Searching the content</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#Searching-with-regular-expressions"><span class="toc-nav-text">Searching with regular expressions</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Inverted-Index"><span class="toc-nav-text">Inverted Index</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Text-analysis"><span class="toc-nav-text">Text analysis</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Tokenizer"><span class="toc-nav-text">Tokenizer</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Filters"><span class="toc-nav-text">Filters</span></a><ol class="toc-nav-child"><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#Lowercase"><span class="toc-nav-text">Lowercase</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#Dropping-common-words"><span class="toc-nav-text">Dropping common words</span></a></li><li class="toc-nav-item toc-nav-level-4"><a class="toc-nav-link" href="#Stemming"><span class="toc-nav-text">Stemming</span></a></li></ol></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Putting-the-analyzer-together"><span class="toc-nav-text">Putting the analyzer together</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Building-the-index"><span class="toc-nav-text">Building the index</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Querying"><span class="toc-nav-text">Querying</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Boolean-queries"><span class="toc-nav-text">Boolean queries</span></a></li><li class="toc-nav-item toc-nav-level-3"><a class="toc-nav-link" href="#Conclusions"><span class="toc-nav-text">Conclusions</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://shanyongbo.github.io/2020/09/20/2020-09-20-制作一个全文搜索引擎/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "shan";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "制作一个全文搜索引擎",
+        owner: "shan",
+        repo: "shan.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>
