@@ -163,6 +163,8 @@
   <!-- Article START -->
   <article class="post-article">
     <section class="markdown-content"><p>原文链接：<a href="https://realpython.com/async-io-python/#async-io-design-patterns" target="_blank" rel="noopener">Async IO in Python: A Complete Walkthrough</a></p>
+<a id="more"></a>
+
 <h2 id="Setting-Up-Your-Environment"><a href="#Setting-Up-Your-Environment" class="headerlink" title="Setting Up Your Environment"></a>Setting Up Your Environment</h2><p>You’ll need Python 3.7 or above to follow this article in its entirety, as well as the <code>aiohttp</code> and <code>aiofiles</code> packages:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ python3.7 -m venv .&#x2F;py37async</span><br><span class="line">$ source .&#x2F;py37async&#x2F;bin&#x2F;activate  # Windows: .\py37async\Scripts\activate.bat</span><br><span class="line">$ pip install --upgrade pip aiohttp aiofiles  # Optional: aiodns</span><br></pre></td></tr></table></figure>
 
@@ -336,9 +338,8 @@
 
 <p>负责获取事件循环，运行任务，直到将其标记为已完成，然后关闭事件循环。</p>
 <p>使用<code>get_event_loop()</code>，可以更轻松地管理<code>asyncio</code>事件循环。典型的模式如下所示：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">loop &#x3D; asyncio.get_event_loop()</span><br><span class="line">try:</span><br><span class="line">    loop.run_until_complete(main())</span><br><span class="line">finally:</span><br><span class="line">    loop.close()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">loop = asyncio.get_event_loop()</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    loop.run_until_complete(main())</span><br><span class="line"><span class="keyword">finally</span>:</span><br><span class="line">    loop.close()</span><br></pre></td></tr></table></figure>
 
-<p>You’ll probably see <code>loop.get_event_loop()</code> floating around in older examples, but unless you have a specific need to fine-tune control over the event loop management, <code>asyncio.run()</code> should be sufficient for most programs.</p>
 <p>在较早的示例中，你可能会看到<code>loop.get_event_loop()</code>随处可见，但是除非你有特定的需求需要微调对事件循环管理的控制，否则对于大多数程序而言，<code>asyncio.run()</code>就足够了。</p>
 <p>如果确实需要与 Python 程序中的事件循环进行交互，则 <code>loop</code> 是一个老式的 Python 对象，它通过 <code>loop.is_running()</code>和<code>loop.is_closed()</code>支持自省。如果你需要获得更精细的控制，就可以操作这个对此昂，例如<a href="https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-example-lowlevel-helloworld" target="_blank" rel="noopener">scheduling a callback</a>，方法是将循环作为参数进行传递。</p>
 <p>更关键的是要对事件循环的机制有一些了解。以下是有关事件循环的一些要点。</p>
@@ -346,7 +347,6 @@
 <p>你之前在有关生成器的说明中已经看到了这一点，但值得重申。如果你有一个等待的主协程，则简单地单独调用它几乎没有效果：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> asyncio</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line"><span class="meta">... </span>    print(<span class="string">"Hello ..."</span>)</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">await</span> asyncio.sleep(<span class="number">1</span>)</span><br><span class="line"><span class="meta">... </span>    print(<span class="string">"World!"</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>routine = main()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>routine</span><br><span class="line">&lt;coroutine object main at <span class="number">0x1027a6150</span>&gt;</span><br></pre></td></tr></table></figure>
 
-<p>Remember to use <code>asyncio.run()</code> to actually force execution by scheduling the <code>main()</code> coroutine (future object) for execution on the event loop:</p>
 <p>记住使用 <code>asyncio.run()</code>通过调度<code>main()</code>协程（future object）在事件循环上执行来实际强制执行：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>asyncio.run(routine)</span><br><span class="line">Hello ...</span><br><span class="line">World!</span><br></pre></td></tr></table></figure>
 
