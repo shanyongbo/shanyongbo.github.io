@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  <meta name="description" content="shan&#39;s blog">
+  <meta name="keyword" content="hexo-theme, vuejs">
+  
+    <link rel="shortcut icon" href="/css/images/logo.png">
+  
+  <title>
+    
+      ovs不同网段子网连接 | shan
+    
+  </title>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css" rel="stylesheet">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/plugins/gitment.css">
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/geopattern/1.2.3/js/geopattern.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+  
+    
+<script src="/js/qrious.js"></script>
+
+  
+  
+    
+<script src="/js/gitment.js"></script>
+
+  
+  
+  
+    <!-- MathJax support START -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- MathJax support END -->
+  
+
+
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+<div class="wechat-share">
+  <img src="/css/images/logo.png" />
+</div>
+
+  <body>
+    <header class="header fixed-header">
+  <div class="header-container">
+    <a class="home-link" href="/">
+      <div class="logo"></div>
+      <span>shan</span>
+    </a>
+    <ul class="right-list">
+      
+        <li class="list-item">
+          
+            <a href="/" class="item-link">Home</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/tags/" class="item-link">Tags</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/archives/" class="item-link">Archives</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/project/" class="item-link">Projects</a>
+          
+        </li>
+      
+        <li class="list-item">
+          
+            <a href="/about/" class="item-link">About</a>
+          
+        </li>
+      
+    </ul>
+    <div class="menu">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </div>
+    <div class="menu-mask">
+      <ul class="menu-list">
+        
+          <li class="menu-item">
+            
+              <a href="/" class="menu-link">Home</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/tags/" class="menu-link">Tags</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/archives/" class="menu-link">Archives</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/project/" class="menu-link">Projects</a>
+            
+          </li>
+        
+          <li class="menu-item">
+            
+              <a href="/about/" class="menu-link">About</a>
+            
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</header>
+
+    <div id="article-banner">
+  <h2>ovs不同网段子网连接</h2>
+  <p class="post-date">2020-05-31</p>
+  <div class="arrow-down">
+    <a href="javascript:;"></a>
+  </div>
+</div>
+<main class="app-body flex-box">
+  <!-- Article START -->
+  <article class="post-article">
+    <section class="markdown-content"><h2 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h2><p>本文的主要目的是验证用<code>ovs</code>中的<code>internal port</code>作为网关，通过配置流表项从而可以直接打通不同网段下的虚拟机或<code>namespace</code>；</p>
+<h2 id="拓扑结构"><a href="#拓扑结构" class="headerlink" title="拓扑结构"></a>拓扑结构</h2><p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E7%BB%93%E6%9E%84.png" alt="image-20201130112814134"></p>
+<p>实验用的拓扑由两个<code>namespace</code>和两个<code>ovs br</code>组成，其中<code>namespace</code>为<code>vns110</code>和<code>vns210</code>，<code>ip</code>分别为<code>192.168.1.10/24</code>, <code>192.168.2.10/24</code>，两个<code>ovs br</code>分别为<code>br1</code>和<code>br2</code>，他们通过<code>patch port</code>相连；</p>
+<h2 id="搭建拓扑"><a href="#搭建拓扑" class="headerlink" title="搭建拓扑"></a>搭建拓扑</h2><p>执行如下的步骤搭建上面描述实验拓扑：</p>
+<p>创建各类虚拟资源：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 添加br1和br2</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-br br1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-br br2</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建veth pair</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link add veth110 <span class="built_in">type</span> veth peer name ovs-veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link add veth210 <span class="built_in">type</span> veth peer name ovs-veth210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建namespace vns110和vns210</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns add vns110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns add vns210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将veth110加入vns110，veth210加入vns210</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> dev veth110 netns vns110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> dev veth210 netns vns210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将ovs-veth110加入br1上，ovs-veth210加入br2上</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-port br1 ovs-veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-port br2 ovs-veth210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将ovs-veth110,ovs-veth210 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> ovs-veth110 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> ovs-veth210 up</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为veth110 和 veth210设置ip并up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns110 ip link <span class="built_in">set</span> veth110 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns210 ip link <span class="built_in">set</span> veth210 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns110 ip addr add 192.168.1.10/24 dev veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns210 ip addr add 192.168.2.10/24 dev veth210</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%90%AD%E5%BB%BA%E6%8B%93%E6%89%91.png" alt="image-20201130133912263"></p>
+<p>将<code>br1</code>和<code>br2</code>中默认的<code>internal port</code> 的地址配置为<code>192.168.1.20/24</code>，<code>192.168.2.20/24</code>；</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 配置internal port的ip地址</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ifconfig br1 192.168.1.20/24</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ifconfig br2 192.168.2.20/24</span></span><br></pre></td></tr></table></figure>
+
+<p>![image-20201130133717826](\ovs不同子网连接\配置internal port地址.png)</p>
+<p>为<code>vns110</code>和<code>vns210</code>添加路由规则，并将网关地址设置为<code>192.168.1.20/24</code>, <code>192.168.2.20/24</code>；</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 设置br1为vns110的网关，br2为vns210的网关，并在通向对方网段时，设置为网关地址</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns110 route add -net 192.168.2.0/24 gw 192.168.1.20 dev veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns210 route add -net 192.168.1.0/24 gw 192.168.2.20 dev veth210</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E9%85%8D%E7%BD%AE%E7%BD%91%E5%85%B3%E5%9C%B0%E5%9D%80.png" alt="image-20201130133505967"></p>
+<p>使用<code>patch</code>方式连接<code>br1</code>和<code>br2</code>；</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># 使用patch互联br1和br2</span><br><span class="line">$ ovs-vsctl add-port br1 trunk_br1 trunks&#x3D;10,20 -- set Interface trunk_br1 type&#x3D;patch options:peer&#x3D;trunk_br2</span><br><span class="line">$ ovs-vsctl add-port br2 trunk_br2 trunks&#x3D;10,20 -- set Interface trunk_br2 type&#x3D;patch options:peer&#x3D;trunk_br1</span><br></pre></td></tr></table></figure>
+
+<p>![image-20201130093002758](\ovs不同子网连接\patch port互联不同br.png)</p>
+<h2 id="配置流表项"><a href="#配置流表项" class="headerlink" title="配置流表项"></a>配置流表项</h2><p>清空已有的流表项；</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 删除默认流表项</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl del-flows br1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl del-flows br2</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%B8%85%E7%A9%BA%E6%B5%81%E8%A1%A8%E9%A1%B9.png" alt="image-20201130133328967"></p>
+<p>添加流表项；</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 对于交换机br1将ip为192.168.1.10的包，修改mac地址后转到port1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"priority=1,arp,arp_tpa=192.168.1.10,action=mod_dl_dst:42:4f:89:8c:ae:77,output:1"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"ip,nw_dst=192.168.1.10,action=mod_dl_dst:42:4f:89:8c:ae:77,output:1"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将目的ip为192.168.2.0/24的包转向port2 </span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"ip,nw_dst=192.168.2.0/24,action=output:2"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"priority=100,arp,arp_tpa=192.168.2.0/24,action=output:2"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将地址为网关的包设置为正常转发</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"ip,nw_dst=192.168.1.20 actions=NORMAL"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"arp,arp_tpa=192.168.1.20 actions=NORMAL"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 对于br2 进行相同的设置</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"priority=1,arp,arp_tpa=192.168.2.10,action=mod_dl_dst:e2:be:c0:66:02:62,output:1"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"ip,nw_dst=192.168.2.10,action=mod_dl_dst:e2:be:c0:66:02:62,output:1"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"ip,nw_dst=192.168.1.0/24,action=output:2"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"priority=100,arp,arp_tpa=192.168.1.0/24,action=output:2"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"ip,nw_dst=192.168.2.20 actions=NORMAL"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"arp,arp_tpa=192.168.2.20 actions=NORMAL"</span></span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%B7%BB%E5%8A%A0%E6%B5%81%E8%A1%A8%E9%A1%B9.png" alt="image-20201130101046231"></p>
+<p>当前<code>br1</code>和<code>br2</code>的流表项如图所示：</p>
+<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5Cimage-20201130115016861.png" alt="image-20201130115016861"></p>
+<h2 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h2><p>从<code>vns110</code>的<code>192.168.1.10</code>成功<code>ping</code>通<code>192.168.2.10</code>，从<code>vns210</code>的<code>192.168.2.10</code>也成功<code>ping</code>通<code>192.168.1.10</code>，成功打通了不同网段下的<code>namespace</code>；</p>
+<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%9C%80%E7%BB%88%E7%BB%93%E6%9E%9C.png" alt="image-20201130134035607"></p>
+</section>
+    <!-- Tags START -->
+    
+      <div class="tags">
+        <span>Tags:</span>
+        
+  <a href="/tags#ovs" >
+    <span class="tag-code">ovs</span>
+  </a>
+
+  <a href="/tags#子网" >
+    <span class="tag-code">子网</span>
+  </a>
+
+  <a href="/tags#namespace" >
+    <span class="tag-code">namespace</span>
+  </a>
+
+  <a href="/tags#流表项" >
+    <span class="tag-code">流表项</span>
+  </a>
+
+      </div>
+    
+    <!-- Tags END -->
+    <!-- NAV START -->
+    
+  <div class="nav-container">
+    <!-- reverse left and right to put prev and next in a more logic postition -->
+    
+      <a class="nav-left" href="/2020/05/31/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%B9%B6%E5%8F%91/">
+        <span class="nav-arrow">← </span>
+        
+          操作系统-并发
+        
+      </a>
+    
+    
+      <a class="nav-right" href="/2020/06/06/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%8C%81%E4%B9%85%E6%80%A7/">
+        
+          操作系统-持久性
+        
+        <span class="nav-arrow"> →</span>
+      </a>
+    
+  </div>
+
+    <!-- NAV END -->
+    <!-- 打赏 START -->
+    
+      <div class="money-like">
+        <div class="reward-btn">
+          赏
+          <span class="money-code">
+            <span class="alipay-code">
+              <div class="code-image"></div>
+              <b>使用支付宝打赏</b>
+            </span>
+            <span class="wechat-code">
+              <div class="code-image"></div>
+              <b>使用微信打赏</b>
+            </span>
+          </span>
+        </div>
+        <p class="notice">若你觉得我的文章对你有帮助，欢迎点击上方按钮对我打赏</p>
+      </div>
+    
+    <!-- 打赏 END -->
+    <!-- 二维码 START -->
+    
+      <div class="qrcode">
+        <canvas id="share-qrcode"></canvas>
+        <p class="notice">扫描二维码，分享此文章</p>
+      </div>
+    
+    <!-- 二维码 END -->
+    
+      <!-- Gitment START -->
+      <div id="comments"></div>
+      <!-- Gitment END -->
+    
+  </article>
+  <!-- Article END -->
+  <!-- Catalog START -->
+  
+    <aside class="catalog-container">
+  <div class="toc-main">
+    <strong class="toc-title">Catalog</strong>
+    
+      <ol class="toc-nav"><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#目的"><span class="toc-nav-text">目的</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#拓扑结构"><span class="toc-nav-text">拓扑结构</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#搭建拓扑"><span class="toc-nav-text">搭建拓扑</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#配置流表项"><span class="toc-nav-text">配置流表项</span></a></li><li class="toc-nav-item toc-nav-level-2"><a class="toc-nav-link" href="#结果"><span class="toc-nav-text">结果</span></a></li></ol>
+    
+  </div>
+</aside>
+  
+  <!-- Catalog END -->
+</main>
+
+<script>
+  (function () {
+    var url = 'http://shanyongbo.github.io/2020/05/31/ovs不同子网连接/';
+    var banner = ''
+    if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
+      $('#article-banner').css({
+        'background-image': 'url(' + banner + ')'
+      })
+    } else {
+      $('#article-banner').geopattern(url)
+    }
+    $('.header').removeClass('fixed-header')
+
+    // error image
+    $(".markdown-content img").on('error', function() {
+      $(this).attr('src', 'http://file.muyutech.com/error-img.png')
+      $(this).css({
+        'cursor': 'default'
+      })
+    })
+
+    // zoom image
+    $(".markdown-content img").on('click', function() {
+      var src = $(this).attr('src')
+      if (src !== 'http://file.muyutech.com/error-img.png') {
+        var imageW = $(this).width()
+        var imageH = $(this).height()
+
+        var zoom = ($(window).width() * 0.95 / imageW).toFixed(2)
+        zoom = zoom < 1 ? 1 : zoom
+        zoom = zoom > 2 ? 2 : zoom
+        var transY = (($(window).height() - imageH) / 2).toFixed(2)
+
+        $('body').append('<div class="image-view-wrap"><div class="image-view-inner"><img src="'+ src +'" /></div></div>')
+        $('.image-view-wrap').addClass('wrap-active')
+        $('.image-view-wrap img').css({
+          'width': `${imageW}`,
+          'transform': `translate3d(0, ${transY}px, 0) scale3d(${zoom}, ${zoom}, 1)`
+        })
+        $('html').css('overflow', 'hidden')
+
+        $('.image-view-wrap').on('click', function() {
+          $(this).remove()
+          $('html').attr('style', '')
+        })
+      }
+    })
+  })();
+</script>
+
+
+  <script>
+    var qr = new QRious({
+      element: document.getElementById('share-qrcode'),
+      value: document.location.href
+    });
+  </script>
+
+
+
+  <script>
+    var gitmentConfig = "shan";
+    if (gitmentConfig !== 'undefined') {
+      var gitment = new Gitment({
+        id: "ovs不同网段子网连接",
+        owner: "shan",
+        repo: "shan.github.io",
+        oauth: {
+          client_id: "0f87e490e00ee3fd87ef",
+          client_secret: "4a9d2b148e7971c2201ad12131ce8bf8159ccd2e"
+        },
+        theme: {
+          render(state, instance) {
+            const container = document.createElement('div')
+            container.lang = "en-US"
+            container.className = 'gitment-container gitment-root-container'
+            container.appendChild(instance.renderHeader(state, instance))
+            container.appendChild(instance.renderEditor(state, instance))
+            container.appendChild(instance.renderComments(state, instance))
+            container.appendChild(instance.renderFooter(state, instance))
+            return container;
+          }
+        }
+      })
+      gitment.render(document.getElementById('comments'))
+    }
+  </script>
+
+
+
+
+    <div class="scroll-top">
+  <span class="arrow-icon"></span>
+</div>
+    <footer class="app-footer">
+  <p class="copyright">
+    &copy; 2020 | Proudly powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+    <br>
+    Theme by <a href="https://github.com/yanm1ng" target="_blank" rel="noopener">yanm1ng</a>
+  </p>
+</footer>
+
+<script>
+  function async(u, c) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+</script>
+<script>
+  async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+    FastClick.attach(document.body);
+  })
+</script>
+
+<script>
+  var hasLine = 'true';
+  async("//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", function(){
+    $('figure pre').each(function(i, block) {
+      var figure = $(this).parents('figure');
+      if (hasLine === 'false') {
+        figure.find('.gutter').hide();
+      }
+      var lang = figure.attr('class').split(' ')[1] || 'code';
+      var codeHtml = $(this).html();
+      var codeTag = document.createElement('code');
+      codeTag.className = lang;
+      codeTag.innerHTML = codeHtml;
+      $(this).attr('class', '').empty().html(codeTag);
+      figure.attr('data-lang', lang.toUpperCase());
+      hljs.highlightBlock(block);
+    });
+  })
+</script>
+<!-- Baidu Tongji -->
+
+
+<script src="/js/script.js"></script>
+
+  </body>
+</html>
