@@ -154,7 +154,7 @@
 
     <div id="article-banner">
   <h2>ovs不同网段子网连接</h2>
-  <p class="post-date">2020-05-31</p>
+  <p class="post-date">2020-12-01</p>
   <div class="arrow-down">
     <a href="javascript:;"></a>
   </div>
@@ -163,13 +163,13 @@
   <!-- Article START -->
   <article class="post-article">
     <section class="markdown-content"><h2 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h2><p>本文的主要目的是验证用<code>ovs</code>中的<code>internal port</code>作为网关，通过配置流表项从而可以直接打通不同网段下的虚拟机或<code>namespace</code>；</p>
-<h2 id="拓扑结构"><a href="#拓扑结构" class="headerlink" title="拓扑结构"></a>拓扑结构</h2><p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E7%BB%93%E6%9E%84.png" alt="image-20201130112814134"></p>
+<h2 id="拓扑结构"><a href="#拓扑结构" class="headerlink" title="拓扑结构"></a>拓扑结构</h2><p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E7%BB%93%E6%9E%84.png" alt="image-20201130112814134"></p>
 <p>实验用的拓扑由两个<code>namespace</code>和两个<code>ovs br</code>组成，其中<code>namespace</code>为<code>vns110</code>和<code>vns210</code>，<code>ip</code>分别为<code>192.168.1.10/24</code>, <code>192.168.2.10/24</code>，两个<code>ovs br</code>分别为<code>br1</code>和<code>br2</code>，他们通过<code>patch port</code>相连；</p>
 <h2 id="搭建拓扑"><a href="#搭建拓扑" class="headerlink" title="搭建拓扑"></a>搭建拓扑</h2><p>执行如下的步骤搭建上面描述实验拓扑：</p>
 <p>创建各类虚拟资源：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 添加br1和br2</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-br br1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-br br2</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建veth pair</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link add veth110 <span class="built_in">type</span> veth peer name ovs-veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link add veth210 <span class="built_in">type</span> veth peer name ovs-veth210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建namespace vns110和vns210</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns add vns110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns add vns210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将veth110加入vns110，veth210加入vns210</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> dev veth110 netns vns110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> dev veth210 netns vns210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将ovs-veth110加入br1上，ovs-veth210加入br2上</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-port br1 ovs-veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-vsctl add-port br2 ovs-veth210</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将ovs-veth110,ovs-veth210 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> ovs-veth110 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip link <span class="built_in">set</span> ovs-veth210 up</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为veth110 和 veth210设置ip并up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns110 ip link <span class="built_in">set</span> veth110 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns210 ip link <span class="built_in">set</span> veth210 up</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns110 ip addr add 192.168.1.10/24 dev veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns210 ip addr add 192.168.2.10/24 dev veth210</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%90%AD%E5%BB%BA%E6%8B%93%E6%89%91.png" alt="image-20201130133912263"></p>
+<p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%90%AD%E5%BB%BA%E6%8B%93%E6%89%91.png" alt="image-20201130133912263"></p>
 <p>将<code>br1</code>和<code>br2</code>中默认的<code>internal port</code> 的地址配置为<code>192.168.1.20/24</code>，<code>192.168.2.20/24</code>；</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 配置internal port的ip地址</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ifconfig br1 192.168.1.20/24</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ifconfig br2 192.168.2.20/24</span></span><br></pre></td></tr></table></figure>
 
@@ -177,7 +177,7 @@
 <p>为<code>vns110</code>和<code>vns210</code>添加路由规则，并将网关地址设置为<code>192.168.1.20/24</code>, <code>192.168.2.20/24</code>；</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 设置br1为vns110的网关，br2为vns210的网关，并在通向对方网段时，设置为网关地址</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns110 route add -net 192.168.2.0/24 gw 192.168.1.20 dev veth110</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ip netns <span class="built_in">exec</span> vns210 route add -net 192.168.1.0/24 gw 192.168.2.20 dev veth210</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E9%85%8D%E7%BD%AE%E7%BD%91%E5%85%B3%E5%9C%B0%E5%9D%80.png" alt="image-20201130133505967"></p>
+<p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E9%85%8D%E7%BD%AE%E7%BD%91%E5%85%B3%E5%9C%B0%E5%9D%80.png" alt="image-20201130133505967"></p>
 <p>使用<code>patch</code>方式连接<code>br1</code>和<code>br2</code>；</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># 使用patch互联br1和br2</span><br><span class="line">$ ovs-vsctl add-port br1 trunk_br1 trunks&#x3D;10,20 -- set Interface trunk_br1 type&#x3D;patch options:peer&#x3D;trunk_br2</span><br><span class="line">$ ovs-vsctl add-port br2 trunk_br2 trunks&#x3D;10,20 -- set Interface trunk_br2 type&#x3D;patch options:peer&#x3D;trunk_br1</span><br></pre></td></tr></table></figure>
 
@@ -185,15 +185,15 @@
 <h2 id="配置流表项"><a href="#配置流表项" class="headerlink" title="配置流表项"></a>配置流表项</h2><p>清空已有的流表项；</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 删除默认流表项</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl del-flows br1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl del-flows br2</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%B8%85%E7%A9%BA%E6%B5%81%E8%A1%A8%E9%A1%B9.png" alt="image-20201130133328967"></p>
+<p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%B8%85%E7%A9%BA%E6%B5%81%E8%A1%A8%E9%A1%B9.png" alt="image-20201130133328967"></p>
 <p>添加流表项；</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 对于交换机br1将ip为192.168.1.10的包，修改mac地址后转到port1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"priority=1,arp,arp_tpa=192.168.1.10,action=mod_dl_dst:42:4f:89:8c:ae:77,output:1"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"ip,nw_dst=192.168.1.10,action=mod_dl_dst:42:4f:89:8c:ae:77,output:1"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将目的ip为192.168.2.0/24的包转向port2 </span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"ip,nw_dst=192.168.2.0/24,action=output:2"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"priority=100,arp,arp_tpa=192.168.2.0/24,action=output:2"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将地址为网关的包设置为正常转发</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"ip,nw_dst=192.168.1.20 actions=NORMAL"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br1 <span class="string">"arp,arp_tpa=192.168.1.20 actions=NORMAL"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 对于br2 进行相同的设置</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"priority=1,arp,arp_tpa=192.168.2.10,action=mod_dl_dst:e2:be:c0:66:02:62,output:1"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"ip,nw_dst=192.168.2.10,action=mod_dl_dst:e2:be:c0:66:02:62,output:1"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"ip,nw_dst=192.168.1.0/24,action=output:2"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"priority=100,arp,arp_tpa=192.168.1.0/24,action=output:2"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"ip,nw_dst=192.168.2.20 actions=NORMAL"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ovs-ofctl add-flow br2 <span class="string">"arp,arp_tpa=192.168.2.20 actions=NORMAL"</span></span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%B7%BB%E5%8A%A0%E6%B5%81%E8%A1%A8%E9%A1%B9.png" alt="image-20201130101046231"></p>
+<p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%B7%BB%E5%8A%A0%E6%B5%81%E8%A1%A8%E9%A1%B9.png" alt="image-20201130101046231"></p>
 <p>当前<code>br1</code>和<code>br2</code>的流表项如图所示：</p>
-<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5Cimage-20201130115016861.png" alt="image-20201130115016861"></p>
+<p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5Cimage-20201130115016861.png" alt="image-20201130115016861"></p>
 <h2 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h2><p>从<code>vns110</code>的<code>192.168.1.10</code>成功<code>ping</code>通<code>192.168.2.10</code>，从<code>vns210</code>的<code>192.168.2.10</code>也成功<code>ping</code>通<code>192.168.1.10</code>，成功打通了不同网段下的<code>namespace</code>；</p>
-<p><img src="/2020/05/31/ovs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%9C%80%E7%BB%88%E7%BB%93%E6%9E%9C.png" alt="image-20201130134035607"></p>
+<p><img src="/2020/12/01/ovs%E5%88%A9%E7%94%A8%E6%B5%81%E8%A1%A8%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%BD%91%E6%AE%B5%E7%9A%84%E5%AD%90%E7%BD%91/%5Covs%E4%B8%8D%E5%90%8C%E5%AD%90%E7%BD%91%E8%BF%9E%E6%8E%A5%5C%E6%9C%80%E7%BB%88%E7%BB%93%E6%9E%9C.png" alt="image-20201130134035607"></p>
 </section>
     <!-- Tags START -->
     
@@ -224,20 +224,13 @@
   <div class="nav-container">
     <!-- reverse left and right to put prev and next in a more logic postition -->
     
-      <a class="nav-left" href="/2020/05/31/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%B9%B6%E5%8F%91/">
+      <a class="nav-left" href="/2020/09/20/2020-09-20-%E5%88%B6%E4%BD%9C%E4%B8%80%E4%B8%AA%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/">
         <span class="nav-arrow">← </span>
         
-          操作系统-并发
+          制作一个全文搜索引擎
         
       </a>
     
-    
-      <a class="nav-right" href="/2020/06/06/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%8C%81%E4%B9%85%E6%80%A7/">
-        
-          操作系统-持久性
-        
-        <span class="nav-arrow"> →</span>
-      </a>
     
   </div>
 
@@ -293,7 +286,7 @@
 
 <script>
   (function () {
-    var url = 'http://shanyongbo.github.io/2020/05/31/ovs不同子网连接/';
+    var url = 'http://shanyongbo.github.io/2020/12/01/ovs利用流表连接不同网段的子网/';
     var banner = ''
     if (banner !== '' && banner !== 'undefined' && banner !== 'null') {
       $('#article-banner').css({
